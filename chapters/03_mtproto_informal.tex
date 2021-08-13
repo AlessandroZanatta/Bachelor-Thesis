@@ -1,0 +1,92 @@
+
+In this chapter a brief overview of the MTProto2.0 protocol will be given. A more in-depth and formal description can be found on the official web page \cite{Telegram-MTProto2.0}.
+
+First of all, MTProto2.0 is a \textit{suite of protocols} used to enable a secure communcation between a client and an MTProto server over an insecure network. MTProto2.0 can be seen as composed by the following protocols:
+
+\begin{itemize}
+    \item{Authorization - used to obtain a secret authorization key shared only with the server}
+    \item{Cloud-chat}
+    \item{Secret-chat}
+    \item{Rekeying}
+\end{itemize}
+
+An overview on these protocols will be given in the next sections.
+
+\section{Authorization protocol}
+
+%% Authorization protocol %%
+\begin{figure}[htb!]
+\centering
+\caption{MTProto2.0 Authorization protocol}
+\setmscoptions
+\begin{msc}{}
+
+\declinst{client}{}{Client}
+\declinst{server}{}{Server}
+
+\action*{Generates nonces $n_{c}, n_{k}$}{client}
+\action*{\parbox{4.5cm}{\centering 
+    Knows keys $\mbox{sk}^{(1)}, \dots, \mbox{sk}^{(n)}$\\
+    Generates nonce $n_s$\\
+    Generates primes $q, r$\\
+    Generates $g, p$
+}}{server}
+\nextlevel[6]
+
+\msccomment{Start}{client}
+\mess{$n_{c}$}{client}{server}
+\nextlevel[2]
+\mess{$n_{c}, n_{s}, q \cdot r, \mbox{fp}^{(1)}, \dots, \mbox{fp}^{(n)}$}{server}{client}
+
+\nextlevel
+\action*{\parbox{4cm}{\centering
+    Chooses $\mbox{pk}^{(i)}$ matching\\
+    $\mbox{fp}^{(i)}$ for some $i$\\
+    Factorises $q \cdot r$\\
+    $C_1 := q \cdot r, q, r, n_c, n_s, n_k$
+}}{client}
+
+\nextlevel[7]
+\mess{$n_c, n_s, q, r, \mbox{fp}^{(i)}, \{\mbox{sha1}\left(C_1\right), C_1\}_{\mbox{pk}^{(i)}}$}{client}{server}
+\nextlevel
+
+\action*{$\left(k, iv\right) := \mbox(kdf)\left(n_s, n_k\right)$}{client}
+\action*{\parbox{4.5cm}{\centering
+    $a \in \Z_p$\\
+    $g_a := g^a \mod{p}$\\
+    $\left(k, iv\right) := \mbox(kdf)\left(n_s, n_k\right)$\\
+    $A := n_c, n_s, g, p, g_a, time$
+}}{server}
+
+\nextlevel[4]
+
+\end{msc}
+\end{figure}
+
+\section{Cloud-chat protocol}
+
+\begin{figure}[htb!]
+\centering
+\caption{MTProto2.0 Cloud-chat protocol}
+\setmscoptions
+\begin{msc}{}
+
+\declinst{client}{}{Client}
+\declinst{server}{}{Server}
+
+\action*{\parbox{4cm}{\centering
+    Knows auth\_key\\
+    Generates salt, sid,\\msg, pad\\
+    $M := \mbox{salt}, \mbox{sid}, \mbox{msg}, \mbox{pad}$\\
+    $msg\_key := \mbox{sha256}\left(M\right)$
+}}{client}
+\action*{Knows auth\_key}{server}
+\nextlevel[6]
+
+\mess{}{client}{server}
+
+
+\end{msc}
+\end{figure}
+
+
