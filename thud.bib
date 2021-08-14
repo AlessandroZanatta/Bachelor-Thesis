@@ -1,19 +1,19 @@
 
 
 @InProceedings{LaMacchia:2007,
-    author="LaMacchia, Brian
+    author = "LaMacchia, Brian
     and Lauter, Kristin
     and Mityagin, Anton",
-    editor="Susilo, Willy
+    editor = "Susilo, Willy
     and Liu, Joseph K.
     and Mu, Yi",
-    title="Stronger Security of Authenticated Key Exchange",
-    booktitle="Provable Security",
-    year="2007",
-    publisher="Springer Berlin Heidelberg",
-    address="Berlin, Heidelberg",
-    pages="1--16",
-    isbn="978-3-540-75670-5"
+    title = "Stronger Security of Authenticated Key Exchange",
+    booktitle = "Provable Security",
+    year = "2007",
+    publisher = "Springer Berlin Heidelberg",
+    address = "Berlin, Heidelberg",
+    pages = "1--16",
+    isbn = "978-3-540-75670-5"
     }
 
 @Article{Schroeder78,
@@ -27,18 +27,18 @@
 }
 
 @InProceedings{Lafourcade-Puys,
-    author="Lafourcade, Pascal
+    author = "Lafourcade, Pascal
     and Puys, Maxime",
-    editor="Garcia-Alfaro, Joaquin
+    editor = "Garcia-Alfaro, Joaquin
     and Kranakis, Evangelos
     and Bonfante, Guillaume",
-    title="Performance Evaluations of Cryptographic Protocols Verification Tools Dealing with Algebraic Properties",
-    booktitle="Foundations and Practice of Security",
-    year="2016",
-    publisher="Springer International Publishing",
-    address="Cham",
-    pages="137--155",
-    isbn="978-3-319-30303-1"
+    title = "Performance Evaluations of Cryptographic Protocols Verification Tools Dealing with Algebraic Properties",
+    booktitle = "Foundations and Practice of Security",
+    year = "2016",
+    publisher = "Springer International Publishing",
+    address = "Cham",
+    pages = "137--155",
+    isbn = "978-3-319-30303-1"
 }
 
 @misc{Telegram-MTProto2.0,
@@ -48,14 +48,82 @@
 }
 
 @article{Dolev-Yao,
-  author={Dolev, D. and Yao, A.},
-  journal={IEEE Transactions on Information Theory}, 
-  title={On the security of public key protocols}, 
-  year={1983},
-  volume={29},
-  number={2},
-  pages={198-208},
-  doi={10.1109/TIT.1983.1056650}
+  author = {Dolev, D. and Yao, A.},
+  journal = {IEEE Transactions on Information Theory}, 
+  title = {On the security of public key protocols}, 
+  year = {1983},
+  volume = {29},
+  number = {2},
+  pages = {198-208},
+  doi = {10.1109/TIT.1983.1056650}
+}
+
+@InProceedings{TamarinFoundations,
+  author = {Schmidt, Benedikt and Meier, Simon and Cremers, Cas and Basin, David},
+  booktitle = {2012 IEEE 25th Computer Security Foundations Symposium}, 
+  title = {Automated Analysis of Diffie-Hellman Protocols and Advanced Security Properties}, 
+  year = {2012},
+  volume = {},
+  number = {},
+  pages = {78-94},
+  doi = {10.1109/CSF.2012.25}
+}
+
+
+@InProceedings{TamarinFoundationsConference,
+author = "Meier, Simon
+and Schmidt, Benedikt
+and Cremers, Cas
+and Basin, David",
+editor = "Sharygina, Natasha
+and Veith, Helmut",
+title = "The TAMARIN Prover for the Symbolic Analysis of Security Protocols",
+booktitle = "Computer Aided Verification",
+year = "2013",
+publisher = "Springer Berlin Heidelberg",
+address = "Berlin, Heidelberg",
+pages = "696--701",
+abstract = "The Tamarin prover supports the automated, unbounded, symbolic analysis of security protocols. It features expressive languages for specifying protocols, adversary models, and properties, and support for efficient deduction and equational reasoning. We provide an overview of the tool and its applications.",
+isbn = "978-3-642-39799-8"
+}
+
+@article{FragmentFirstOrderLogicPaper,
+ ISSN = {00223611, 15730433},
+ URL = {http://www.jstor.org/stable/30226645},
+ author = {Hajnal Andréka and István Németi and Johan van Benthem},
+ journal = {Journal of Philosophical Logic},
+ number = {3},
+ pages = {217--274},
+ publisher = {Springer},
+ title = {Modal Languages and Bounded Fragments of Predicate Logic},
+ volume = {27},
+ year = {1998}
+}
+
+
+@inproceedings{TamarinFoundationsExtended,
+author = {Schmidt, Benedikt and Meier, Simon and Cremers, Cas and Basin, David},
+title = {Automated Analysis of Diffie-Hellman Protocols and Advanced Security Properties},
+year = {2012},
+isbn = {9780769547183},
+publisher = {IEEE Computer Society},
+address = {USA},
+url = {https://doi.org/10.1109/CSF.2012.25},
+doi = {10.1109/CSF.2012.25},
+abstract = {We present a general approach for the symbolic analysis of security protocols that
+use Diffie-Hellman exponentiation to achieve advanced security properties. We model
+protocols as multiset rewriting systems and security properties as first-order formulas.
+We analyze them using a novel constraint-solving algorithm that supports both falsification
+and verification, even in the presence of an unbounded number of protocol sessions.
+The algorithm exploits the finite variant property and builds on ideas from strand
+spaces and proof normal forms. We demonstrate the scope and the effectiveness of our
+algorithm on non-trivial case studies. For example, the algorithm successfully verifies
+the NAXOS protocol with respect to a symbolic version of the eCK security model.},
+booktitle = {Proceedings of the 2012 IEEE 25th Computer Security Foundations Symposium},
+pages = {78–94},
+numpages = {17},
+keywords = {Security Protocols, Security Models, Key Exchange Protocols, Formal Methods for Security, Diffie-Hellman},
+series = {CSF '12}
 }
 
 @manual{TamarinProverManual,
@@ -71,9 +139,18 @@
 }
 
 @misc{Cremers-Jackson,
-    author = {Cas Cremers and Dennis Jackson},
+    author = {Cas, Cremers and Dennis, Jackson},
     title = {Prime, Order Please! Revisiting Small Subgroup and Invalid Curve Attacks on Protocols using Diffie-Hellman},
     howpublished = {Cryptology ePrint Archive, Report 2019/526},
     year = {2019},
     note = {\url{https://eprint.iacr.org/2019/526}},
+}
+
+@misc{MTProto2-Tamarin,
+  author = {Alessandro, Zanatta},
+  title = {MTProto2-Tamarin},
+  year = {2021},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/AlessandroZanatta/MTProto2-Tamarin}}
 }

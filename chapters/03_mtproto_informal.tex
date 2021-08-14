@@ -1,7 +1,7 @@
 
 In this chapter a brief overview of the MTProto2.0 protocol will be given. A more in-depth and formal description can be found on the official web page \cite{Telegram-MTProto2.0}.
 
-First of all, MTProto2.0 is a \textit{suite of protocols} used to enable a secure communcation between a client and an MTProto server over an insecure network. MTProto2.0 can be seen as composed by the following protocols:
+First of all, MTProto2.0 is a \textit{suite of protocols} used to enable a secure communication between a client and an MTProto server over an insecure network. MTProto2.0 can be seen as composed by the following protocols:
 
 \begin{itemize}
     \item{Authorization - used to obtain a secret authorization key shared only with the server}
@@ -20,6 +20,7 @@ An overview on these protocols will be given in the next sections.
 \caption{MTProto2.0 Authorization protocol}
 \setmscoptions
 \begin{msc}{}
+\setmscscale{.8} 
 
 \declinst{client}{}{Client}
 \declinst{server}{}{Server}
@@ -27,13 +28,11 @@ An overview on these protocols will be given in the next sections.
 \action*{Generates nonces $n_{c}, n_{k}$}{client}
 \action*{\parbox{4.5cm}{\centering 
     Knows keys $\mbox{sk}^{(1)}, \dots, \mbox{sk}^{(n)}$\\
-    Generates nonce $n_s$\\
-    Generates primes $q, r$\\
-    Generates $g, p$
+    Generates $n_s, g, p$\\
+    Generates proof-of-work primes $q, r$
 }}{server}
 \nextlevel[6]
 
-\msccomment{Start}{client}
 \mess{$n_{c}$}{client}{server}
 \nextlevel[2]
 \mess{$n_{c}, n_{s}, q \cdot r, \mbox{fp}^{(1)}, \dots, \mbox{fp}^{(n)}$}{server}{client}
@@ -54,17 +53,47 @@ An overview on these protocols will be given in the next sections.
 \action*{\parbox{4.5cm}{\centering
     $a \in \Z_p$\\
     $g_a := g^a \mod{p}$\\
-    $\left(k, iv\right) := \mbox(kdf)\left(n_s, n_k\right)$\\
-    $A := n_c, n_s, g, p, g_a, time$
+    $k, iv := \mbox{kdf}\left(n_s, n_k\right)$\\
+    $S_1 := n_c, n_s, g, p, g_a, t_1$
 }}{server}
 
-\nextlevel[4]
+\nextlevel[6]
+\mess{$n_c, n_s, \left\{\mbox{sha1}\left(S_1\right), S_1\right\}_{k, iv}$}{server}{client}
+\nextlevel
+
+\action*{\parbox{4.5cm}{\centering
+$b \in \Z_p$\\
+$g_b := g^b \mod{p}$\\
+Checks $g, p, g_a, g_b$\\
+$k_{AS} := g_a^b \mod{p}$\\
+$C_2 := n_c, n_s, rID, g_b$
+}}{client}
+\nextlevel[7]
+
+\mess{$n_c, n_s, \left\{\mbox{sha1}\left(C_2\right), C_2\right\}_{k, iv}$}{client}{server}
+\nextlevel
+
+\action*{\parbox{4.5cm}{\centering
+$k_{AS} := g_b^a \mod{p}$
+}}{server}
+\nextlevel[3]
+
+\mess{$n_c, n_s, \mbox{hash}\left(n_k, k_{AS}\right)$}{server}{client}
+
 
 \end{msc}
 \end{figure}
 
+
+
+
+
+
+
+
 \section{Cloud-chat protocol}
 
+%% Cloud-chat protocol %%
 \begin{figure}[htb!]
 \centering
 \caption{MTProto2.0 Cloud-chat protocol}
@@ -75,8 +104,8 @@ An overview on these protocols will be given in the next sections.
 \declinst{server}{}{Server}
 
 \action*{\parbox{4cm}{\centering
-    Knows auth\_key\\
-    Generates salt, sid,\\msg, pad\\
+    Knows $k_{AS}$\\
+    Generates $salt, sid,$\\$msg, pad$\\
     $M := \mbox{salt}, \mbox{sid}, \mbox{msg}, \mbox{pad}$\\
     $msg\_key := \mbox{sha256}\left(M\right)$
 }}{client}
