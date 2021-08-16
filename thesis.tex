@@ -49,6 +49,36 @@
 
 \newcommand*{\Z}{\mathbb{Z}}
 
+%% Taken from https://hal.inria.fr/file/index/docid/955869/filename/sapic.tex
+\newcommand{\msrA}{\mathrel{-\hspace{-2pt}[}}
+\newcommand{\msrB}{]\hspace{-4pt}\to}
+
+\newcommand{\msrewrite}[1]{\mathrel{-\hspace{-2pt}[#1]\hspace{-4pt}\to}}
+\newcommand{\emptyrule}{\ensuremath{[]}\xspace}
+\newcommand{\msr}[3]{\ensuremath{#1 \msrewrite{#2} #3}}
+
+\newcommand{\ri}{\ensuremath{\mathit{ri}}\xspace}
+\newcommand{\prems}{\ensuremath{\mathit{prems}}\xspace}
+\newcommand{\actions}{\ensuremath{\mathit{actions}}\xspace}
+\newcommand{\conclusions}{\ensuremath{\mathit{conclusions}}\xspace}
+\newcommand{\ginsts}{\ensuremath{\mathit{ginsts}}\xspace}
+\newcommand{\pfacts}{\ensuremath{\mathit{pfacts}}\xspace}
+\newcommand{\lfacts}{\ensuremath{\mathit{lfacts}}\xspace}
+\newcommand{\tracesmsr}{\ensuremath{\mathit{traces}^\mathit{msr}}\xspace}
+\newcommand{\execmsr}{\ensuremath{\mathit{exec}^\mathit{msr}}\xspace}
+\newcommand{\tr}{\ensuremath{\mathit{tr}}\xspace}
+\newcommand{\Tr}{\ensuremath{\mathit{Tr}}\xspace}
+\newcommand{\temp}{\ensuremath{\mathit{temp}}\xspace}
+%% -------------- %%
+
+\newcommand{\msrnolabel}[2]{\ensuremath{#1 \rightarrow #2}}
+\newcommand{\msrsetminus}{\ensuremath{\setminus^\#}}
+\newcommand{\msrcap}{\ensuremath{\cap^\#}}
+\newcommand{\msrcup}{\ensuremath{\cup^\#}}
+
+
+
+
 %% --- Document start --- %%
 \begin{document}
 \maketitle
@@ -86,26 +116,27 @@ Un bell'abstract va qua!
 \chapter{Introduction}
 
 
-\chapter{Proverif and Tamarin}
+\chapter{Proverif and Tamarin-Prover}
 \input{./chapters/02_proverif_tamarin}
 
 \chapter{MTProto2.0 protocol description}
 \input{./chapters/03_mtproto_informal}
 
+\chapter{Formalisation in Tamarin-Prover}
 
 %% Fine dei capitoli normali, inizio dei capitoli-appendice (opzionali)
 \appendix
 
 %\part{Appendici}
 
-\chapter{Titolo della prima appendice}
+% \chapter{Dolev-Yao model}
+% \input{./chapters/app01_dolev_yao}
 
 %% Parte conclusiva del documento; tipicamente per riassunto, bibliografia e/o indice analitico.
 \backmatter
 
 %% Riassunto (opzionale)
 %\summary
-%Maecenas tempor elit sed arcu commodo, dapibus sagittis leo egestas. Praesent at ultrices urna. Integer et nibh in augue mollis facilisis sit amet eget magna. Fusce at porttitor sapien. Phasellus imperdiet, felis et molestie vulputate, mauris sapien tincidunt justo, in lacinia velit nisi nec ipsum. Duis elementum pharetra lorem, ut pellentesque nulla congue et. Sed eu venenatis tellus, pharetra cursus felis. Sed et luctus nunc. Aenean commodo, neque a aliquam bibendum, mauris augue fringilla justo, et scelerisque odio mi sit amet diam. Nulla at placerat nibh, nec rutrum urna. Donec ut egestas magna. Aliquam erat volutpat. Phasellus vestibulum justo sed purus mattis, vitae lacinia magna viverra. Nulla rutrum diam dui, vel semper mi mattis ac. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Donec id vestibulum lectus, eget tristique est.
 
 %% Bibliografia (praticamente obbligatoria)
 \bibliographystyle{plain_\languagename}%% Carica l'omonimo file .bst, dove \languagename � la lingua attiva.

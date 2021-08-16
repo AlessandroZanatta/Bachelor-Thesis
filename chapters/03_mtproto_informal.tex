@@ -1,21 +1,21 @@
 
 In this chapter a brief overview of the MTProto2.0 protocol will be given. A more in-depth and formal description can be found on the official web page \cite{Telegram-MTProto2.0}.
 
-First of all, MTProto2.0 is a \textit{suite of protocols} used to enable a secure communication between a client and an MTProto server over an insecure network. MTProto2.0 can be seen as composed by the following protocols:
+First of all, MTProto2.0 is a \textit{suite of protocols} used to enable a secure communication between a client and an MTProto server over an insecure network. MTProto2.0 can be decomposed in the four following protocols:
 
-\begin{itemize}
-    \item{Authorization - used to obtain a secret authorization key shared only with the server}
-    \item{Cloud-chat}
-    \item{Secret-chat}
-    \item{Rekeying}
-\end{itemize}
+\begin{description}[style=nextline]
+    \item[Authorization] used to obtain a secret authorization key shared only with the server;
+    \item[Cloud-chat] used to send an encrypted message. This protocol only encrypts messages from the client to server (and vice versa);
+    \item[Secret-chat] used to obtain a secret key shared between two clients. This is then used to exchange end-to-end messages between two clients, with the server that basically acts as a forwarder;
+    \item[Rekeying] used to achieve Perfect Forward Security, allows to obtain a new end-to-end encryption key.
+\end{description}
 
 An overview on these protocols will be given in the next sections.
 
 \section{Authorization protocol}
 
 %% Authorization protocol %%
-\begin{figure}[htb!]
+\begin{figure}
 \centering
 \caption{MTProto2.0 Authorization protocol}
 \setmscoptions
@@ -49,16 +49,16 @@ An overview on these protocols will be given in the next sections.
 \mess{$n_c, n_s, q, r, \mbox{fp}^{(i)}, \{\mbox{sha1}\left(C_1\right), C_1\}_{\mbox{pk}^{(i)}}$}{client}{server}
 \nextlevel
 
-\action*{$\left(k, iv\right) := \mbox(kdf)\left(n_s, n_k\right)$}{client}
+\action*{$\left(k, iv\right) := \mbox{kdf}\left(n_s, n_k\right)$}{client}
 \action*{\parbox{4.5cm}{\centering
     $a \in \Z_p$\\
     $g_a := g^a \mod{p}$\\
-    $k, iv := \mbox{kdf}\left(n_s, n_k\right)$\\
+    $key, iv := \mbox{kdf}\left(n_s, n_k\right)$\\
     $S_1 := n_c, n_s, g, p, g_a, t_1$
 }}{server}
 
 \nextlevel[6]
-\mess{$n_c, n_s, \left\{\mbox{sha1}\left(S_1\right), S_1\right\}_{k, iv}$}{server}{client}
+\mess{$n_c, n_s, \left\{\mbox{sha1}\left(S_1\right), S_1\right\}_{key, iv}$}{server}{client}
 \nextlevel
 
 \action*{\parbox{4.5cm}{\centering
@@ -94,28 +94,112 @@ $k_{AS} := g_b^a \mod{p}$
 \section{Cloud-chat protocol}
 
 %% Cloud-chat protocol %%
-\begin{figure}[htb!]
+\begin{figure}
 \centering
 \caption{MTProto2.0 Cloud-chat protocol}
 \setmscoptions
 \begin{msc}{}
+\setmscscale{.8} 
 
 \declinst{client}{}{Client}
 \declinst{server}{}{Server}
 
-\action*{\parbox{4cm}{\centering
+\action*{\parbox{5cm}{\centering
     Knows $k_{AS}$\\
-    Generates $salt, sid,$\\$msg, pad$\\
-    $M := \mbox{salt}, \mbox{sid}, \mbox{msg}, \mbox{pad}$\\
-    $msg\_key := \mbox{sha256}\left(M\right)$
+    Generates $salt, sid,$\\$payload, pad$\\
+    $M := \mbox{salt}, \mbox{sid}, \mbox{payload}, \mbox{pad}$\\
+    $mk := \mbox{sha256}\left(k_{AS}, M\right)$\\
+    $k, iv := \mbox{kdf}\left(k_{AS}, mk\right)$
 }}{client}
-\action*{Knows auth\_key}{server}
+\nextlevel[8]
+
+\mess{$\mbox{keyID}\left(k_{AS}\right), mk, \left\{M\right\}_{k, iv}$}{client}{server}
+
+\nextlevel
+\action*{\parbox{5.5cm}{\centering
+    Knows $k_{AS}$\\
+    $k, iv := \mbox{kdf}\left(k_{AS}, mk\right)$\\
+    Obtains $M$\\
+    Checks $\mbox{sha256}\left(k_{AS}, M\right) = mk$
+    Checks $payload$ time, length\\and sequence number
+}}{server}
 \nextlevel[6]
-
-\mess{}{client}{server}
-
 
 \end{msc}
 \end{figure}
 
 
+\section{Secret-chat protocol}
+
+%% Secret-chat protocol %%
+\begin{figure}
+\centering
+\caption{MTProto2.0 Secret-chat protocol}
+\setmscoptions
+\begin{msc}{}
+\setmscscale{.8} 
+
+\declinst{alice}{}{Alice}
+\declinst{server}{}{Server}
+\declinst{bob}{}{Bob}
+
+
+\action*{\parbox{4.5cm}{\centering
+    Knows $k^{A}_{AS}, k^{B}_{AS}$
+}}{server}
+
+\action*{\parbox{4.5cm}{\centering
+    Knows $k^{A}_{AS}$
+}}{alice}
+
+\action*{\parbox{4.5cm}{\centering
+    Knows $k^{B}_{AS}$
+}}{bob}
+
+\nextlevel[2]
+\action*{\parbox{4.5cm}{\centering
+    Gets $g, p$\\
+    Generates $sid$\\
+    $a \in \Z_p$\\
+    $g_a := g^a \mod{p}$\\
+    $M_1 := g, p, sid, g_a$
+}}{alice}
+
+\nextlevel[6]
+
+%% TODO: Telegram webpage does not seem to specify HOW this is encrypted!!
+\mess{$\left\{M_1\right\}_{k^A_{AS}}$}{alice}{server}
+\nextlevel
+\mess{$\left\{M_1\right\}_{k^B_{AS}}$}{server}{bob}
+
+\nextlevel
+\action*{\parbox{4.5cm}{\centering
+    $b \in \Z_p$\\
+    $g_b := g^b \mod{p}$\\
+    $k_{AB} := g_a ^ b \mod{p}$\\
+    $M_2 := sid, g_b, \mbox{fpk}\left(k_{AB}\right)$
+}}{bob}
+
+\nextlevel[5]
+\mess{$\left\{M_2\right\}_{k^B_{AS}}$}{bob}{server}
+\nextlevel
+\mess{$\left\{M_2\right\}_{k^A_{AS}}$}{server}{alice}
+
+\nextlevel
+\action*{\parbox{5cm}{\centering
+    $k_{AB} := g_b ^ a \mod{p}$\\
+    Generates $payload$\\
+    $mk := \mbox{sha256}\left(k_{AB}, payload\right)$\\
+    $key, iv = \mbox{kdf}\left(k_{AB}, mk\right)$\\
+    $C := \left\{payload\right\}_{key, iv}$
+    $msg := \mbox{fpk}\left(k_{AB}\right), mk, C$
+}}{alice}
+
+\nextlevel[7]
+
+\mess{$\left\{msg\right\}_{k^A_{AS}}$}{alice}{server}
+\nextlevel
+\mess{$\left\{msg\right\}_{k^B_{AS}}$}{server}{bob}
+
+\end{msc}
+\end{figure}
