@@ -1,25 +1,18 @@
-%% Le lingue utilizzate, che verranno passate come opzioni al pacchetto babel. Come sempre, l'ultima indicata sar� quella primaria.
-%% Se si utilizzano una o pi� lingue diverse da "italian" o "english", leggere le istruzioni in fondo.
 \def\thudbabelopt{english}
-%% Valori ammessi per target: bach (tesi triennale), mst (tesi magistrale), phd (tesi di dottorato).
-%% Valori ammessi per aauheader: '' (vuoto -> nessun header Alpen Adria Univeristat), aics (Department of Artificial Intelligence and Cybersecurity), informatics (Department of Informatics Systems). Il nome del dipartimento � allineato con la versione inglese del logo UniUD.
 \documentclass[target=bach,aauheader=]{thud}
 
-%% --- Informazioni sulla tesi ---
-%% Per tutti i tipi di tesi
-% Scommentare quello di interesse, o mettete quello che vi pare
+%% --- Information about the thesis --- %%
 \course{Internet of Things, Big Data and Web}
 \title{Comparison of tools for the formal verification of MTProto 2.0}
 \author{Alessandro Zanatta}
 \supervisor{Prof.\ Marino Miculan}
-%% Campi obbligatori: \title, \author e \course.
-%% Altri campi disponibili: \reviewer, \tutor, \chair, \date (anno accademico, calcolato in automatico), \rights
-%% Con \supervisor, \cosupervisor, \reviewer e \tutor si possono indicare pi� nomi separati da \and.
+%% \cosupervisor{Prof.\ Nicola Vitacolonna} % TODO: Is Vitacolonna considered a supervisor?
+%% Other available fields: \reviewer, \tutor, \chair, \date (anno accademico, calcolato in automatico), \rights
 
-%% --- Pacchetti consigliati ---
+%% --- Suggested packages ---
 %% pdfx: per generare il PDF/A per l'archiviazione. Necessario solo per la versione finale
 \usepackage[a-1b]{pdfx}
-%% hyperref: Regola le impostazioni della creazione del PDF... pi� tante altre cose. Ricordarsi di usare l'opzione pdfa.
+%% hyperref: Regola le impostazioni della creazione del PDF... più tante altre cose. Ricordarsi di usare l'opzione pdfa.
 \usepackage[pdfa]{hyperref}
 %% tocbibind: Inserisce nell'indice anche la lista delle figure, la bibliografia, ecc.
 
@@ -29,11 +22,12 @@
 %% plain: Apertura delle parti e dei capitoli tradizionali di LaTeX; intestazioni di pagina come "big".
 
 %% --- Other packages --- %%
-% Protocol graphical representation
-\usepackage{msc}
+\usepackage{msc} % Protocol graphical representation
 \usepackage{mathtools}
 \usepackage{amssymb}
 \usepackage{enumitem}
+\usepackage[justification=centering]{caption} % Used to have always centered captions
+\usepackage{cleveref} % better references
 \usepackage{graphicx} % for images
 \graphicspath{ {./images} } % images path
 
@@ -50,34 +44,21 @@
 \newcommand*{\Z}{\mathbb{Z}}
 
 %% Taken from https://hal.inria.fr/file/index/docid/955869/filename/sapic.tex
-\newcommand{\msrA}{\mathrel{-\hspace{-2pt}[}}
-\newcommand{\msrB}{]\hspace{-4pt}\to}
-
 \newcommand{\msrewrite}[1]{\mathrel{-\hspace{-2pt}[#1]\hspace{-4pt}\to}}
 \newcommand{\emptyrule}{\ensuremath{[]}\xspace}
 \newcommand{\msr}[3]{\ensuremath{#1 \msrewrite{#2} #3}}
-
-\newcommand{\ri}{\ensuremath{\mathit{ri}}\xspace}
-\newcommand{\prems}{\ensuremath{\mathit{prems}}\xspace}
-\newcommand{\actions}{\ensuremath{\mathit{actions}}\xspace}
-\newcommand{\conclusions}{\ensuremath{\mathit{conclusions}}\xspace}
-\newcommand{\ginsts}{\ensuremath{\mathit{ginsts}}\xspace}
-\newcommand{\pfacts}{\ensuremath{\mathit{pfacts}}\xspace}
-\newcommand{\lfacts}{\ensuremath{\mathit{lfacts}}\xspace}
-\newcommand{\tracesmsr}{\ensuremath{\mathit{traces}^\mathit{msr}}\xspace}
-\newcommand{\execmsr}{\ensuremath{\mathit{exec}^\mathit{msr}}\xspace}
-\newcommand{\tr}{\ensuremath{\mathit{tr}}\xspace}
-\newcommand{\Tr}{\ensuremath{\mathit{Tr}}\xspace}
-\newcommand{\temp}{\ensuremath{\mathit{temp}}\xspace}
 %% -------------- %%
 
 \newcommand{\msrnolabel}[2]{\ensuremath{#1 \rightarrow #2}}
 \newcommand{\msrsetminus}{\ensuremath{\setminus^\#}}
 \newcommand{\msrcap}{\ensuremath{\cap^\#}}
 \newcommand{\msrcup}{\ensuremath{\cup^\#}}
+\newcommand{\msrin}{\ensuremath{\in^\#}}
+\newcommand{\msrsubseteq}{\ensuremath{\subseteq^\#}}
+\newcommand{\lin}[1]{\ensuremath{lin\left(#1\right)}}
+\newcommand{\pers}[1]{\ensuremath{pers\left(#1\right)}}
 
-
-
+\newcommand{\fact}[2]{\ensuremath{\mbox{!#1}\left(#2\right)}}
 
 %% --- Document start --- %%
 \begin{document}
@@ -108,10 +89,6 @@ Un bell'abstract va qua!
 %% Corpo principale del documento
 \mainmatter
 
-%% Parte
-%% La suddivisione in parti � opzionale; solitamente sono sufficienti i capitoli.
-%\part{Parte}
-
 %% Capitolo
 \chapter{Introduction}
 
@@ -126,8 +103,6 @@ Un bell'abstract va qua!
 
 %% Fine dei capitoli normali, inizio dei capitoli-appendice (opzionali)
 \appendix
-
-%\part{Appendici}
 
 % \chapter{Dolev-Yao model}
 % \input{./chapters/app01_dolev_yao}

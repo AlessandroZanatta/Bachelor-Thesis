@@ -15,9 +15,10 @@ An overview on these protocols will be given in the next sections.
 \section{Authorization protocol}
 
 %% Authorization protocol %%
-\begin{figure}
+\begin{figure}[t]
 \centering
 \caption{MTProto2.0 Authorization protocol}
+\label{fig:authorization-protocol}
 \setmscoptions
 \begin{msc}{}
 \setmscscale{.8} 
@@ -94,9 +95,10 @@ $k_{AS} := g_b^a \mod{p}$
 \section{Cloud-chat protocol}
 
 %% Cloud-chat protocol %%
-\begin{figure}
+\begin{figure}[t]
 \centering
 \caption{MTProto2.0 Cloud-chat protocol}
+\label{fig:cloud-chat-protocol}
 \setmscoptions
 \begin{msc}{}
 \setmscscale{.8} 
@@ -132,9 +134,10 @@ $k_{AS} := g_b^a \mod{p}$
 \section{Secret-chat protocol}
 
 %% Secret-chat protocol %%
-\begin{figure}
+\begin{figure}[t]
 \centering
 \caption{MTProto2.0 Secret-chat protocol}
+\label{fig:secret-chat-protocol}
 \setmscoptions
 \begin{msc}{}
 \setmscscale{.8} 
@@ -168,6 +171,7 @@ $k_{AS} := g_b^a \mod{p}$
 \nextlevel[6]
 
 %% TODO: Telegram webpage does not seem to specify HOW this is encrypted!!
+%% UPDATE: It actually (kinda) does: it's encrypted as a cloud-chat message! For simplicity, keep this notation and explain it's meaning in the written part.
 \mess{$\left\{M_1\right\}_{k^A_{AS}}$}{alice}{server}
 \nextlevel
 \mess{$\left\{M_1\right\}_{k^B_{AS}}$}{server}{bob}
