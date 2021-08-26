@@ -102,67 +102,121 @@
 	pages        = {34--39},
 	doi          = {10.1109/SFCS.1983.42}
 }
-@InProceedings{SATMC,
-author="Armando, Alessandro
-and Carbone, Roberto
-and Compagna, Luca",
-editor="{\'A}brah{\'a}m, Erika
-and Havelund, Klaus",
-title="SATMC: A SAT-Based Model Checker for Security-Critical Systems",
-booktitle="Tools and Algorithms for the Construction and Analysis of Systems",
-year="2014",
-publisher="Springer Berlin Heidelberg",
-address="Berlin, Heidelberg",
-pages="31--45",
-isbn="978-3-642-54862-8"
+@inproceedings{SATMC,
+	title        = {SATMC: A SAT-Based Model Checker for Security-Critical Systems},
+	author       = {Armando, Alessandro and Carbone, Roberto and Compagna, Luca},
+	year         = 2014,
+	booktitle    = {Tools and Algorithms for the Construction and Analysis of Systems},
+	publisher    = {Springer Berlin Heidelberg},
+	address      = {Berlin, Heidelberg},
+	pages        = {31--45},
+	isbn         = {978-3-642-54862-8},
+	editor       = {{\'A}brah{\'a}m, Erika and Havelund, Klaus}
 }
-@InProceedings{LoweNeedhamSchroederPK,
-author="Lowe, Gavin",
-editor="Margaria, Tiziana
-and Steffen, Bernhard",
-title="Breaking and fixing the Needham-Schroeder Public-Key Protocol using FDR",
-booktitle="Tools and Algorithms for the Construction and Analysis of Systems",
-year="1996",
-publisher="Springer Berlin Heidelberg",
-address="Berlin, Heidelberg",
-pages="147--166",
-isbn="978-3-540-49874-2"
+@inproceedings{LoweNeedhamSchroederPK,
+	title        = {Breaking and fixing the Needham-Schroeder Public-Key Protocol using FDR},
+	author       = {Lowe, Gavin},
+	year         = 1996,
+	booktitle    = {Tools and Algorithms for the Construction and Analysis of Systems},
+	publisher    = {Springer Berlin Heidelberg},
+	address      = {Berlin, Heidelberg},
+	pages        = {147--166},
+	isbn         = {978-3-540-49874-2},
+	editor       = {Margaria, Tiziana and Steffen, Bernhard}
 }
-
-
-
+@article{ABADI20053,
+	title        = {Computer-assisted verification of a protocol for certified email},
+	author       = {Martín Abadi and Bruno Blanchet},
+	year         = 2005,
+	journal      = {Science of Computer Programming},
+	volume       = 58,
+	number       = 1,
+	pages        = {3--27},
+	doi          = {https://doi.org/10.1016/j.scico.2005.02.002},
+	issn         = {0167-6423},
+	url          = {https://www.sciencedirect.com/science/article/pii/S0167642305000420},
+	note         = {Special Issue on the Static Analysis Symposium 2003},
+	keywords     = {Security protocols, Protocol formal analysis},
+	abstract     = {We present the formalization and verification of a recently developed cryptographic protocol for certified email. Relying on a tool for automatic protocol analysis, we establish the key security properties of the protocol. This case study explores the use of general correspondence assertions in automatic proofs, and aims to demonstrate the considerable power of the tool and its applicability to non-trivial, interesting protocols.}
+}
+@article{hal-01575923,
+	title        = {Automated Verification for Secure Mes- saging Protocols and Their Implementations: A Symbolic and Computational Approach},
+	author       = {Nadim, Kobeissi and Karthikeyan, Bhargavan and Bruno, Blanchet},
+	year         = 2017,
+	journal      = {2nd IEEE European Symposium on Security and Privacy},
+	pages        = {435--450}
+}
+@book{pi-calculus-book,
+	title        = {Communicating and Mobile Systems: The π-Calculus},
+	author       = {Milner, Robin},
+	year         = 1999,
+	publisher    = {Cambridge University Press},
+	address      = {USA},
+	isbn         = {0521658691}
+}
+@article{DBLP:journals/corr/abs-2012-03141,
+	title        = {Automated Symbolic Verification of Telegram's MTProto 2.0},
+	author       = {Marino Miculan and Nicola Vitacolonna},
+	year         = 2020,
+	journal      = {CoRR},
+	volume       = {abs/2012.03141},
+	url          = {https://arxiv.org/abs/2012.03141},
+	archiveprefix = {arXiv},
+	eprint       = {2012.03141},
+	timestamp    = {Wed, 09 Dec 2020 15:29:05 +0100},
+	biburl       = {https://dblp.org/rec/journals/corr/abs-2012-03141.bib},
+	bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+@article{10.1145/1266977.1266978,
+	title        = {Just Fast Keying in the Pi Calculus},
+	author       = {Abadi, Mart\'{\i}n and Blanchet, Bruno and Fournet, C\'{e}dric},
+	year         = 2007,
+	month        = jul,
+	journal      = {ACM Trans. Inf. Syst. Secur.},
+	publisher    = {Association for Computing Machinery},
+	address      = {New York, NY, USA},
+	volume       = 10,
+	number       = 3,
+	pages        = {9–es},
+	doi          = {10.1145/1266977.1266978},
+	issn         = {1094-9224},
+	url          = {https://doi.org/10.1145/1266977.1266978},
+	issue_date   = {July 2007},
+	abstract     = {JFK is a recent, attractive protocol for fast key establishment as part of securing IP communication. In this paper, we formally analyze this protocol in the applied pi calculus (partly in terms of observational equivalences and partly with the assistance of an automatic protocol verifier). We treat JFK's core security properties and also other properties that are rarely articulated and rigorously studied, such as plausible deniability and resistance to denial-of-service attacks. In the course of this analysis, we found some ambiguities and minor problems, such as limitations in identity protection, but we mostly obtain positive results about JFK. For this purpose, we develop ideas and techniques that should be more generally useful in the specification and verification of security protocols.},
+	numpages     = 59,
+	keywords     = {IP security, key exchange, process calculus}
+}
 @article{SymbolicVerificationBlanchet,
-url = {http://dx.doi.org/10.1561/3300000004},
-year = {2016},
-volume = {1},
-journal = {Foundations and Trends® in Privacy and Security},
-title = {Modeling and Verifying Security Protocols with the Applied Pi Calculus and ProVerif},
-doi = {10.1561/3300000004},
-issn = {2474-1558},
-number = {1-2},
-pages = {1-135},
-author = {Bruno Blanchet}
+	title        = {Modeling and Verifying Security Protocols with the Applied Pi Calculus and ProVerif},
+	author       = {Bruno Blanchet},
+	year         = 2016,
+	journal      = {Foundations and Trends® in Privacy and Security},
+	volume       = 1,
+	number       = {1-2},
+	pages        = {1--135},
+	doi          = {10.1561/3300000004},
+	issn         = {2474-1558},
+	url          = {http://dx.doi.org/10.1561/3300000004}
 }
-
 @article{SymbolicModelUndecidability1,
-author = {Durgin, Nancy and Lincoln, Patrick and Mitchell, John},
-year = {2004},
-month = {02},
-pages = {247-311},
-title = {Multiset Rewriting and the Complexity of Bounded Security Protocols},
-volume = {12},
-journal = {Journal of Computer Security},
-doi = {10.3233/JCS-2004-12203}
+	title        = {Multiset Rewriting and the Complexity of Bounded Security Protocols},
+	author       = {Durgin, Nancy and Lincoln, Patrick and Mitchell, John},
+	year         = 2004,
+	month        = {02},
+	journal      = {Journal of Computer Security},
+	volume       = 12,
+	pages        = {247--311},
+	doi          = {10.3233/JCS-2004-12203}
 }
 @inproceedings{SymbolicModelNPCompleteInsecurity,
-author = {Rusinowitch, Micha\"{e}l and Turuani, Mathieu},
-title = {Protocol Insecurity with Finite Number of Sessions is NP-Complete},
-year = {2001},
-publisher = {IEEE Computer Society},
-address = {USA},
-booktitle = {Proceedings of the 14th IEEE Workshop on Computer Security Foundations},
-pages = {174},
-series = {CSFW '01}
+	title        = {Protocol Insecurity with Finite Number of Sessions is NP-Complete},
+	author       = {Rusinowitch, Micha\"{e}l and Turuani, Mathieu},
+	year         = 2001,
+	booktitle    = {Proceedings of the 14th IEEE Workshop on Computer Security Foundations},
+	publisher    = {IEEE Computer Society},
+	address      = {USA},
+	series       = {CSFW '01},
+	pages        = 174
 }
 @inproceedings{RSAFaultAttack,
 	title        = {Seifert's RSA Fault Attack: Simplified Analysis and Generalizations},

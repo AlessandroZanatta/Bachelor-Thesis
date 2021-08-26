@@ -29,6 +29,7 @@
 \usepackage[justification=centering]{caption} % Used to have always centered captions
 \usepackage{cleveref} % better references
 \usepackage{graphicx} % for images
+\usepackage{textgreek} % greek letters out of math mode
 \graphicspath{ {./images} } % images path
 
 %% --- Commands --- %%
@@ -41,7 +42,11 @@
   \centering
 }
 
+% Multiline comments
+\newcommand{\comment}[1]{}
+
 \newcommand*{\Z}{\mathbb{Z}}
+\newcommand*{\Q}{\mathbb{Q}}
 
 %% Taken from https://hal.inria.fr/file/index/docid/955869/filename/sapic.tex
 \newcommand{\msrewrite}[1]{\mathrel{-\hspace{-2pt}[#1]\hspace{-4pt}\to}}
@@ -59,6 +64,7 @@
 \newcommand{\pers}[1]{\ensuremath{pers\left(#1\right)}}
 
 \newcommand{\fact}[2]{\ensuremath{\mbox{!#1}\left(#2\right)}}
+\newcommand*{\myexp}{\hat{\mkern6mu}}
 
 %% --- Document start --- %%
 \begin{document}
