@@ -30,7 +30,10 @@
 \usepackage{cleveref} % better references
 \usepackage{graphicx} % for images
 \usepackage{textgreek} % greek letters out of math mode
+\usepackage{caption} % captions for equations (outside of floats, in general)
 \graphicspath{ {./images} } % images path
+
+\DeclareCaptionType{equ}[][]
 
 %% --- Commands --- %%
 \newcommand\setmscoptions{%
@@ -65,6 +68,21 @@
 
 \newcommand{\fact}[2]{\ensuremath{\mbox{!#1}\left(#2\right)}}
 \newcommand*{\myexp}{\hat{\mkern6mu}}
+
+% pi-calculus
+\newcommand{\pic}{\textpi-calculus }
+\newcommand{\picnospace}{\textpi-calculus}
+\newcommand{\apicpc}[2]{\ensuremath{P\ |\ Q}}
+\newcommand{\apicin}[4]{\mbox{in}\left(#1, #2: #3\right); #4}
+\newcommand{\apicout}[3]{\mbox{out}\left(#1, #2\right); #3}
+\newcommand{\apicrep}[1]{!#1}
+\newcommand{\apicnew}[3]{\ensuremath{\mbox{new}\ #1: #2; #3}}
+\newcommand{\apiclet}[5]{\ensuremath{\mbox{let}\ #1: #2\ = #3\ \mbox{in}\ #4\ \mbox{else}\ #5}}
+\newcommand{\apicif}[3]{\ensuremath{\mbox{if}\ #1\ \mbox{then}\ #2\ \mbox{else}\ #3}}
+\newcommand{\apicevent}[2]{\ensuremath{\mbox{event}\ \mbox{#1}\left(#2\right)}}
+
+% spacing in math multiline mode
+\setlength{\jot}{1pt}
 
 %% --- Document start --- %%
 \begin{document}

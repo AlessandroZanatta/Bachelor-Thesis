@@ -21,12 +21,13 @@ Following from the equation $-$ and considering the perfect cryptography assumpt
 In the \textit{computational model} the messages are bitstrings, the cryptographic primitives are functions from bitstrings to bitstrings and the attacker is modeled as a probabilistic Turing machine.
 A security property in this model is considered to hold when the probability that it does \textit{not} hold is negligible. For instance, the previously discussed shared-key encryption can be modeled using the same equalities, but the security of encryption is expressed by stating that the attacker has an insignificant probability of breaking the primitive (e.g. decrypting the message without having the key). Security proofs using this model are usually stronger, however this comes to the cost of long, difficult, tedious and highly error prone proofs (as stated by INRIA researchers \cite{ComputationalAnalysisCryptoSystemsINRIA}). Finally, as pointed to by Blanchet \cite{SymbolicComputationalBlanchet}, the computational model is indeed just a \textit{model} and ignores many aspects of reality and potential attacks, e.g. faulty attacks like the one affecting processors computing RSA signatures \cite{RSAFaultAttack}. 
 
-Both Proverif and Tamarin employ a symbolic model. This makes it possible to automate proofs when given a set of primitives, a protocol model and a set of security properties. Note that termination is still not always guaranteed\footnote{It actually depends on the tool. Proverif proofs always terminate, but they might terminate with an inconclusive result, while Tamarin may simply not terminate without ever giving a result. More details about this problem will be discussed later.}. % TODO: discuss non termination issues!!
+Both Proverif and Tamarin employ a symbolic model. This makes it possible to automate proofs when given a set of primitives, a protocol model and a set of security properties. Note that termination is still not always guaranteed\footnote{It actually depends on the tool. Both Proverif and Tamarin may not terminate. Assuming termination, Proverif proofs may end with an inconclusive result, while Tamarin will always give a proof. Other tools, like Scyther \cite{Scyther}, always terminate by limiting the growth of some parameters. More details about this problem will be discussed in \cref{sec:difficulties-analysis-symbolic}.}. % TODO: discuss non termination issues!!
 
 \section{Difficulties in the security protocol analysis in the symbolic model}
+\label{sec:difficulties-analysis-symbolic}
 There are two main problems that affect most tools for security protocol analysis: \textbf{infinite state space} and \textbf{undecidability}.
 
-At an high level, to verify a protocol in the symbolic model, one computes the set of terms that the adversary knows. If a certain term does not belong to this set, then the term is considered secret \cite{SymbolicVerificationBlanchet}. The difficulty is that the set of terms is infinite. Specifically, we have three sources of infinity when analyzing a protocol:
+At an high level, to verify a protocol in the symbolic model, one computes the set of terms that the adversary knows. If a certain term does not belong to this set, then the term is considered secret \cite{SymbolicVerificationBlanchet}. The difficulty is that the set of terms is infinite. Specifically, we have to deal with three sources of infinity when analyzing a protocol:
 \begin{description}
     \item[\textbf{Messages}] - the adversary can produce messages of any arbitrary size;
     \item[\textbf{Sessions}] - as many attacks are possible only when multiple sessions are executed in parallel, symbolic models often use an unbounded number of sessions;
@@ -45,7 +46,7 @@ There have been various way of tackling this problem:
 
     \begin{itemize}
         \item{Rely on help from the user. This is the approach chosen by Tamarin \cite{TamarinFoundations}, which allows for semi-automatic proofs (possible messages are ranked by the system, but the user can choose which to solve first);}
-        \item{Another possibility is to have tools that may return an inconclusive result $-$ yet are supposed to work correctly in most cases;}
+        \item{Another possibility is to have tools that may return an inconclusive result $-$ yet are supposed to work correctly in most cases. This is the approach of Proverif \cite{SymbolicVerificationBlanchet};}
         \item{The last approach is to allow non-termination.}
     \end{itemize}
     }
@@ -55,7 +56,7 @@ There have been various way of tackling this problem:
 \begin{figure}[t]
     \includegraphics{undecidability}
     \centering
-    \caption{Decidability of termination.\\Heavily inspired by a representation from Nicola Vitacolonna.}
+    \caption{Decidability of termination.\\Inspired by a representation from Nicola Vitacolonna.}
     \label{fig:undecidability}
 \end{figure}
 
@@ -68,10 +69,12 @@ There have been various way of tackling this problem:
 Let us start with a brief overview of Proverif internal reasoning. For more information, please refer to \cite{SymbolicComputationalBlanchet, SymbolicVerificationBlanchet, ProverifManual}.
 
 \subsection{High level view}
-Proverif protocols and security properties are based on an extended version of the \textpi-calculus. The tool also allows the user to define constructors, destructors and equations\footnote{Destructors are basically used to de-construct some previously constructed term (e.g. decryption of an encrypted ciphertext), while equations represent term equality of some sort (e.g. commutativity of multiplication).}, which form the equational theory. The protocol is then translated to a set of Horn-clauses. Using this abstract representation of the protocol (based on Horn-clauses), the Proverif verifier uses a resolution algorithm on such clauses that allows for verification of security properties \cite{SymbolicComputationalBlanchet}.
+Proverif protocols and security properties are based on an extended version of the \pic (the \textit{applied} \pic). The tool also allows the user to define constructors, destructors and equations\footnote{Destructors are basically used to de-construct some previously constructed term (e.g. decryption of an encrypted ciphertext), while equations represent term equality of some sort (e.g. commutativity of multiplication).}, which form the cryptographic primitives. The protocol is then automatically translated to a set of Horn-clauses. Using this abstract representation of the protocol (based on Horn-clauses), the Proverif verifier uses a resolution algorithm on such clauses that allows for verification of security properties \cite{SymbolicComputationalBlanchet}.
 A graphical representation of the whole process is given in \cref{fig:proverif-verification-method}.
 
-It is important to note that Proverif is not complete. This means that it may find false attacks. Moreover, it may not terminate, but it has been proven to be precise and efficient enough in practice by many case studies (the following is a non-exhaustive list of examples \cite{10.1145/1266977.1266978, ABADI20053, hal-01575923, DBLP:journals/corr/abs-2012-03141}). 
+It is important to note that Proverif is not complete. This means that it may find false attacks. Moreover, it may not terminate, but it has been proven to be precise and efficient enough in practice by many case studies (the following is a non-exhaustive list of examples \cite{10.1145/1266977.1266978, ABADI20053, hal-01575923, DBLP:journals/corr/abs-2012-03141}).
+
+We will now proceed with an overview of \pic and Horn-clauses.
 
 \begin{figure}[t]
     \includegraphics{proverif-verification-method}
@@ -80,11 +83,81 @@ It is important to note that Proverif is not complete. This means that it may fi
     \label{fig:proverif-verification-method}
 \end{figure}
 
-\subsection{\textpi-calculus and applied \textpi-calculus}
+\subsection{\pic and applied \pic}
 
-The \textpi-calculus is a (minimal) programming \cite{pi-calculus-book}
+The \pic \cite{pi-calculus-book} is a (minimal) programming that models system communicating on channels. It belongs to the \textit{process calculi} family, which is generally used to model concurrent systems. As Proverif uses the \textit{applied} \pic (which is an extension of standard \picnospace), we are going to briefly present its syntax in the rest of this section.
+
+The following description of applied \pic references articles \cite{applied-pi-calculus-private-auth, applied-pi-calculus-abadi-1, applied-pi-calculus-abadi-2}. Please refer to these resources for further information and a more formal or in-depth description. For brevity, we only define main features of applied \pic in \cref{subsub:syntax-apic}.
+
+\subsubsection{Overview of the syntax of the applied \pic}
+\label{subsub:syntax-apic}
+
+A \textit{signature \textSigma} is composed by a finite number of functions symbols, each with its own integer arity. Given such signature, together with an infinite set of names and an infinite set of variables, the set of \textbf{terms} is defined by the grammar:
+
+\begin{equation}
+\label{eq:apic-terms}
+\begin{aligned}
+    U, V &::=\\
+    &a, b, \dots\\
+    &x, y, \dots\\
+    &f\left(U_1, \dots, U_l\right)
+\end{aligned}
+\qquad
+\begin{aligned}
+    \mbox{term}&\mbox{s}\\
+    &\mbox{name}\\
+    &\mbox{variable}\\
+    &\mbox{constructor application}
+\end{aligned}
+\end{equation}
+
+where $f \in \Sigma$ and $l$ matches the arity of $f$. Next, we define a grammar for processes, which is shown in \cref{eq:apic-processes}. As pointed to by Microsoft researchers, this grammar is very similar to the \pic \cite{applied-pi-calculus-private-auth}. We will omit defining differences from standard \pic as we have not formally defined \pic either.
+
+\begin{equation}
+\label{eq:apic-processes}
+\begin{aligned}
+    P, Q &::= \\
+    &0 \\
+    &\apicout{N}{M}{P} \\
+    &\apicin{N}{x}{T}{P} \\
+    &\apicpc{P}{Q}\\
+    &\apicrep{P}\\
+    &\apicnew{a}{T}{P}\\
+    &\apicif{M}{P}{Q}
+\end{aligned}
+\qquad
+\begin{aligned}
+    \mbox{proc}&\mbox{esses} \\
+    &\mbox{null process}\\
+    &\mbox{output to channel N of message M}\\
+    &\mbox{input from channel N of message M with sort T}\\
+    &\mbox{parallel composition}\\
+    &\mbox{replication}\\
+    &\mbox{fresh value of sort T}\\
+    &\mbox{conditional}
+\end{aligned}
+\end{equation}
+
+The null process $0$ does nothing;
+$\apicout{N}{M}{P}$ ($\apicin{N}{x}{T}{P}$) outputs (gets) the message M (of sort $x$) into (from) channel N and then continues with process $P$; Notice that getting a message from a channel is a blocking operation;
+$\apicpc{P}{Q}$ is the parallel composition of $P$ and $Q$;
+The process $\apicrep{P}$ effectively behaves as an infinite number of copies of $P$ running in parallel (\textit{unbounded} replication);
+$\apicnew{a}{T}{P}$ creates a new fresh value of sort $T$, before proceeding with process $P$;
+$\apicif{M}{P}{Q}$ if a standard conditional.
+
+\comment{
+$\apiclet{x}{T}{D}{P}{Q}$ is used to apply destructors or assign some term $D$ to a variable $x$ (of sort $T$);
+} 
+
+
 
 \subsection{Horn-clauses}
+
+
+
+
+
+
 
 \section{Tamarin}
 In this section we will see an overview of Tamarin foundations and internal reasoning.
@@ -93,7 +166,7 @@ For a more in-depth description and further information, see the Tamarin foundat
 \subsection{High level view}
 First of all, let us examine an high level picture of Tamarin.
 
-The security property model of Tamarin is based on labelled multiset rewriting rules to specify protocols and adversary capabilities, a guarded fragment\footnote{Only a few examples of formulas respecting the guarded fragment of first order logic used by Tamarin will be given in the next subsections. See \cite{FragmentFirstOrderLogicPaper} for a rigorous definition from a mathematical point of view.} of first order logic to specify security properties\footnote{Security properties in Tamarin will also be referred to as \textit{lemmas}.} and functions and equational theories to model the algebraic properties of cryptographic protocols \cite{TamarinFoundations}.
+The security property model of Tamarin is based on labelled multiset rewriting rules to specify protocols and adversary capabilities, a guarded fragment\footnote{Only a few examples of formulas respecting the guarded fragment of first order logic used by Tamarin will be given in \cref{sub:guarded-formulas}. See \cite{FragmentFirstOrderLogicPaper} for a rigorous definition from a mathematical point of view.} of first order logic to specify security properties\footnote{Security properties in Tamarin will also be referred to as \textit{lemmas}.} and functions and equational theories to model the algebraic properties of cryptographic protocols \cite{TamarinFoundations}.
 
 Given the rewriting rules, security properties and equational theories, Tamarin uses a novel constraint-solving algorithm which tries to validate or falsify lemmas.
 
@@ -141,10 +214,10 @@ Let us examine an informal description of transitions.
     \item{When we use labelled multiset rewriting rules, such as $\msr{l}{a}{r}$, we also add facts from $a$ to the \textit{trace} of the execution.}
 \end{itemize}
 
-\Cref{builtin-tamarin-msr-rules} shows multiset rewriting rules that are always defined by Tamarin. It is not hard to see that these equations are used to model the Dolev-Yao attacker: the first rule allows the adversary to send a message $x$ he knows to someone, while the second one allows him to learn a message $x$ sent by someone.
+\Cref{eq:builtin-tamarin-msr-rules} shows multiset rewriting rules that are always defined by Tamarin. It is not hard to see that these equations are used to model the Dolev-Yao attacker: the first rule allows the adversary to send a message $x$ he knows to someone, while the second one allows him to learn a message $x$ sent by someone.
 
 \begin{equation}
-\label{builtin-tamarin-msr-rules}
+\label{eq:builtin-tamarin-msr-rules}
 \begin{gathered}
     \msr{!KU\left(x\right)}{K\left(x\right)}{In\left(x\right)}\\
     \msrnolabel{Out\left(x\right)}{\ !KD(x)}
@@ -193,10 +266,10 @@ A brief list of Tamarin built-ins is given below. Only the builtin theories cons
 \subsection{Guarded formulas}
 \label{sub:guarded-formulas}
 
-As reported earlier, Tamarin uses a guarded fragment of first order logic to specify security properties and $-$ in general $-$ traces. All formulas must be guarded, which essentially means that all variables quantified \textbf{must} appear in facts. \Cref{guarded-formulas} shows two main formulas that respect the guarded fragment. Most $-$ if not every $-$ security property can be expressed using these formulas:
+As reported earlier, Tamarin uses a guarded fragment of first order logic to specify security properties and $-$ in general $-$ traces. All formulas must be guarded, which essentially means that all variables quantified \textbf{must} appear in facts. \Cref{eq:guarded-formulas} shows two main formulas that respect the guarded fragment. Most $-$ if not every $-$ security property can be expressed using these formulas:
 
 \begin{equation}
-\label{guarded-formulas}
+\label{eq:guarded-formulas}
 \begin{gathered}
     \forall \overline{x}. F\left(\overline{z}\right) @i \Rightarrow \psi \\
     \exists \overline{x}. F\left(\overline{z}\right) @i \land \psi
@@ -204,7 +277,7 @@ As reported earlier, Tamarin uses a guarded fragment of first order logic to spe
 \end{equation}
 
 where $F$ is a fact, $\psi$ is guarded and $\overline{x}$ and $\overline{z}$ are vectors of terms such that $\overline{x} \subseteq \overline{z} \cup i$.
-The variable $i$ is a timepoint, which annotates that the fact $F$ occurred at time $i$ (timepoints all belong to $\Q$)\footnote{Notice that timepoints are very useful to define post-compromise security properties (i.e. leaking an ephemeral key \textbf{after} honest parties have used it) and Perfect Forward Secrecy.}.
+The variable $i$ is a timepoint, which annotates that the fact $F$ occurred at time $i$ (timepoints all belong to $\Q$)\footnote{Notice that timepoints are very useful to define post-compromise security properties (i.e. leaking an ephemeral key \textbf{after} honest parties have used it) and Perfect Forward Secrecy.} \cite{TamarinTeachingSlides}.
 
 \section{Comparison of Proverif and Tamarin}
 \label{section:proverif-vs-tamarin}

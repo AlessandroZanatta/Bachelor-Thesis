@@ -63,8 +63,7 @@
 	address      = {Berlin, Heidelberg},
 	pages        = {696--701},
 	isbn         = {978-3-642-39799-8},
-	editor       = {Sharygina, Natasha and Veith, Helmut},
-	abstract     = {The Tamarin prover supports the automated, unbounded, symbolic analysis of security protocols. It features expressive languages for specifying protocols, adversary models, and properties, and support for efficient deduction and equational reasoning. We provide an overview of the tool and its applications.}
+	editor       = {Sharygina, Natasha and Veith, Helmut}
 }
 @article{FragmentFirstOrderLogicPaper,
 	title        = {Modal Languages and Bounded Fragments of Predicate Logic},
@@ -136,8 +135,7 @@
 	issn         = {0167-6423},
 	url          = {https://www.sciencedirect.com/science/article/pii/S0167642305000420},
 	note         = {Special Issue on the Static Analysis Symposium 2003},
-	keywords     = {Security protocols, Protocol formal analysis},
-	abstract     = {We present the formalization and verification of a recently developed cryptographic protocol for certified email. Relying on a tool for automatic protocol analysis, we establish the key security properties of the protocol. This case study explores the use of general correspondence assertions in automatic proofs, and aims to demonstrate the considerable power of the tool and its applicability to non-trivial, interesting protocols.}
+	keywords     = {Security protocols, Protocol formal analysis}
 }
 @article{hal-01575923,
 	title        = {Automated Verification for Secure Mes- saging Protocols and Their Implementations: A Symbolic and Computational Approach},
@@ -182,7 +180,6 @@
 	issn         = {1094-9224},
 	url          = {https://doi.org/10.1145/1266977.1266978},
 	issue_date   = {July 2007},
-	abstract     = {JFK is a recent, attractive protocol for fast key establishment as part of securing IP communication. In this paper, we formally analyze this protocol in the applied pi calculus (partly in terms of observational equivalences and partly with the assistance of an automatic protocol verifier). We treat JFK's core security properties and also other properties that are rarely articulated and rigorously studied, such as plausible deniability and resistance to denial-of-service attacks. In the course of this analysis, we found some ambiguities and minor problems, such as limitations in identity protection, but we mostly obtain positive results about JFK. For this purpose, we develop ideas and techniques that should be more generally useful in the specification and verification of security protocols.},
 	numpages     = 59,
 	keywords     = {IP security, key exchange, process calculus}
 }
@@ -289,3 +286,72 @@
 	publisher    = {GitHub},
 	howpublished = {\url{https://github.com/AlessandroZanatta/MTProto2-Tamarin}}
 }
+
+
+
+
+@article{applied-pi-calculus-private-auth,
+author = {Fournet, Cedric},
+year = {2003},
+month = {04},
+pages = {},
+title = {Hiding Names: Private Authentication in the Applied Pi Calculus},
+isbn = {978-3-540-00708-1},
+doi = {10.1007/3-540-36532-X_20}
+}
+
+@inproceedings{applied-pi-calculus-abadi-1,
+author = {Abadi, Mart\'{\i}n and Fournet, C\'{e}dric},
+title = {Mobile Values, New Names, and Secure Communication},
+year = {2001},
+isbn = {1581133367},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/360204.360213},
+doi = {10.1145/360204.360213},
+booktitle = {Proceedings of the 28th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages},
+pages = {104–115},
+numpages = {12},
+location = {London, United Kingdom},
+series = {POPL '01}
+}
+
+@article{applied-pi-calculus-abadi-2,
+author = {Abadi, Mart\'{\i}n and Fournet, C\'{e}dric},
+title = {Mobile Values, New Names, and Secure Communication},
+year = {2001},
+issue_date = {March 2001},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {36},
+number = {3},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/373243.360213},
+doi = {10.1145/373243.360213},
+journal = {SIGPLAN Not.},
+month = jan,
+pages = {104–115},
+numpages = {12}
+}
+
+@unpublished{TamarinTeachingSlides,
+	author={David, Basin and Cas, Cremers and Jannik, Dreier and Ralf, Sasse},
+	howpublished = {\url{https://github.com/tamarin-prover/teaching}},
+	title = {Security protocol analysis using the Tamarin Prover},
+	year = {2017},
+	note = {Accessed: {2021–08-27}}
+}
+@InProceedings{Scyther,
+author="Cremers, Cas J. F.",
+editor="Gupta, Aarti
+and Malik, Sharad",
+title="The Scyther Tool: Verification, Falsification, and Analysis of Security Protocols",
+booktitle="Computer Aided Verification",
+year="2008",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="414--418",
+abstract="With the rise of the Internet and other open networks, a large number of security protocols have been developed and deployed in order to provide secure communication. The analysis of such security protocols has turned out to be extremely difficult for humans, as witnessed by the fact that many protocols were found to be flawed after deployment. This has driven the research in formal analysis of security protocols. Unfortunately, there are no effective approaches yet for constructing correct and efficient protocols, and work on concise formal logics that might allow one to easily prove that a protocol is correct in a formal model, is still ongoing. The most effective approach so far has been automated falsification or verification of such protocols with state-of-the-art tools such as ProVerif [1] or the Avispa tools [2]. These tools have shown to be effective at finding attacks on protocols (Avispa) or establishing correctness of protocols (ProVerif).",
+isbn="978-3-540-70545-1"
+}
+
