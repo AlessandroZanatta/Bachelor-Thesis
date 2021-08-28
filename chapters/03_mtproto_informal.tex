@@ -10,9 +10,29 @@ First of all, MTProto2.0 is a \textit{suite of protocols} used to enable a secur
     \item[Rekeying] used to achieve Perfect Forward Security, allows to obtain a new end-to-end encryption key.
 \end{description}
 
-An overview on these protocols will be given in the next sections.
+An overview on these protocols will be given in \cref{sec:auth-prot,sec:cloud-chat,sec:secret-chat,sec:rekeying}.
 
 \section{Authorization protocol}
+\label{sec:auth-prot}
+
+The first time a Telegram client C runs the application, it must negotiate an \textbf{authorization key} with the Telegram server S. The authorization protocol is used to this end. Once the client and the server have shared an \textbf{authorizaton key}, they will use it for every future communication between them. A client might also have several keys (e.g. on multiple devices or if reinstalling the application), some of which might be locked (e.g. if the device is lost).
+
+A successful protocol run consists of three rounds:
+\begin{description}
+    \item[Round 1] In the first round every message is in plaintext. In particular, the client and the server exchange two nonces ($n_c$ and $n_s$). The pair $\left<n_c, n_s\right>$ identifies a session of the authorization protocol. These nonces are sent in every consequent message of the current run of the protocol, both in plaintext and encrypted.
+    \begin{enumerate}
+        \item{In the first message, the client sends his fresh nonce $n_c$ to the server;}
+        \item{The server answers with the client nonce $n_c$, the server fresh nonce $n_s$, a challenge $q \cdot r \leq 2^{63}$ (which are two primes used as a measure to prevent denial of service, as the client needs to spend resources on factorizing $q \cdot r$ before the server has to commit (more) resources) and a list of public RSA key fingerprints (calculated as the lower 64-bits of $\mbox{SHA1}\left(\mbox{server-public-key}\right)$).}
+    \end{enumerate}
+
+    \item[Round 2] The client decomposes $q\cdot r$ in $\left<q, r\right>$, retrieves the public key of the server $pk^{\left(i\right)}$. The client then generates a nonce $n_k$ of 256 bits. This nonce is also supposed to be secret and will be used, together with $n_s$, in the derivation of a symmetric encryption key $k$ and of an initialization vector $iv$.
+    \begin{enumerate}
+        \setcounter{enumi}{2}
+        \item{}
+        \item{}
+    \end{enumerate}
+
+\end{description}
 
 %% Authorization protocol %%
 \begin{figure}[t]
@@ -93,6 +113,7 @@ $k_{AS} := g_b^a \mod{p}$
 
 
 \section{Cloud-chat protocol}
+\label{sec:cloud-chat}
 
 %% Cloud-chat protocol %%
 \begin{figure}[t]
@@ -132,6 +153,7 @@ $k_{AS} := g_b^a \mod{p}$
 
 
 \section{Secret-chat protocol}
+\label{sec:secret-chat}
 
 %% Secret-chat protocol %%
 \begin{figure}[t]
@@ -208,3 +230,6 @@ $k_{AS} := g_b^a \mod{p}$
 \caption{MTProto2.0 Secret-chat protocol}
 \label{fig:secret-chat-protocol}
 \end{figure}
+
+\section{Rekeying protocol}
+\label{sec:rekeying}
