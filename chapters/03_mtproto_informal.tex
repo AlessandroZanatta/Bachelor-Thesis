@@ -47,39 +47,39 @@ An overview on these protocols will be given in \cref{sec:auth-prot,sec:cloud-ch
 }}{client}
 
 \nextlevel[7]
-\mess{$n_c, n_s, q, r, \mbox{fp}^{(i)}, \{\mbox{sha1}\left(C_1\right), C_1\}_{\mbox{pk}^{(i)}}$}{client}{server}
+\mess{$n_c, n_s, q, r, \mbox{fp}^{(i)}, \enc{\sha{1}{C_1}, C_1}{\mbox{pk}^{(i)}}$}{client}{server}
 \nextlevel
 
-\action*{$\left(k, iv\right) := \mbox{kdf}\left(n_s, n_k\right)$}{client}
+\action*{$\left(k, iv\right) := \kdf{n_s, n_k}$}{client}
 \action*{\parbox{4.5cm}{\centering
-    $s \in \Z_p$\\
-    $g_s := g^s \mod{p}$\\
-    $key, iv := \mbox{kdf}\left(n_s, n_k\right)$\\
+    $s \in \group{p}$\\
+    $g_s := \modexp{g}{s}{p}$\\
+    $key, iv := \kdf{n_s, n_k}$\\
     $S_1 := n_c, n_s, g, p, g_s, t_1$
 }}{server}
 
 \nextlevel[6]
-\mess{$n_c, n_s, \left\{\mbox{sha1}\left(S_1\right), S_1\right\}_{key, iv}$}{server}{client}
+\mess{$n_c, n_s, \enc{\sha{1}{S_1}, S_1}{key, iv}$}{server}{client}
 \nextlevel
 
 \action*{\parbox{4.5cm}{\centering
-$c \in \Z_p$\\
-$g_c := g^c \mod{p}$\\
+$c \in \group{p}$\\
+$g_c := \modexp{g}{c}{p}$\\
 Checks $g, p$\\
-$k_{CS} := g_s^c \mod{p}$\\
+$\key{CS} := \modexp{g_s}{c}{p}$\\
 $C_2 := n_c, n_s, rID, g_c$
 }}{client}
 \nextlevel[7]
 
-\mess{$n_c, n_s, \left\{\mbox{sha1}\left(C_2\right), C_2\right\}_{k, iv}$}{client}{server}
+\mess{$n_c, n_s, \enc{\sha{1}{C_2}, C_2}{k, iv}$}{client}{server}
 \nextlevel
 
 \action*{\parbox{4.5cm}{\centering
-$k_{CS} := g_c^s \mod{p}$
+$\key{CS} := \modexp{g_c}{s}{p}$
 }}{server}
 \nextlevel[3]
 
-\mess{$n_c, n_s, \mbox{hash}\left(n_k, k_{CS}\right)$}{server}{client}
+\mess{$n_c, n_s, \hash{n_k, \key{CS}}$}{server}{client}
 
 
 \end{msc}
@@ -97,18 +97,19 @@ A successful protocol run consists of three rounds, which are represented schema
     \item[Round 1] In the first round messages are in plaintext. In particular, the client and the server exchange two nonces ($n_c$ and $n_s$). The pair $\left<n_c, n_s\right>$ identifies a session of the authorization protocol. These nonces are sent in every consequent message of the current run of the protocol, both in plaintext and encrypted form.
     \begin{enumerate}
         \item{In the first message, the client sends his fresh nonce $n_c$ to the server;}
-        \item{The server answers with the client nonce $n_c$, the server fresh nonce $n_s$, a challenge $q \cdot r \leq 2^{63}$ (which are two primes used as a measure to prevent denial of service, as the client needs to spend resources on factorizing $q \cdot r$ before the server has to commit (more) resources\footnote{Notice that this might not be true as this is vulnerable to a lookup table approach (e.g. using \href{http://factordb.com}{factordb.com}).}) and a list of public RSA key fingerprints (calculated as the lower 64-bits of the SHA1 of the server public keys).}
+        \item{The server answers with the client nonce $n_c$, the server fresh nonce $n_s$, a challenge $q \cdot r \leq 2^{63}$ (which are two primes used as a measure to prevent denial of service, as the client needs to spend resources on factorizing $q \cdot r$ before the server has to commit (more) resources\footnote{Notice that this might not be true as this might be vulnerable to a lookup table approach (e.g. using \href{http://factordb.com}{factordb.com}).}) and a list of public RSA key fingerprints (calculated as the lower 64-bits of the SHA1 of the server public keys).}
     \end{enumerate}
 
     \item[Round 2] The client decomposes $q\cdot r$ in $\left<q, r\right>$, retrieves the public key of the server $pk^{\left(i\right)}$. The client then generates a nonce $n_k$ of 256 bits. This nonce $n_k$ is supposed to be secret. The pair $\left<n_s, n_k\right>$ is used, by both server and client, to derive, through a derivation function $\mbox{kdf}$, a symmetric encryption key $k$ and an initialization vector $iv$, which will be used in subsequent exchanges.
     \begin{enumerate}
         \setcounter{enumi}{2}
         \item{The client asymmetrically encrypts both $\left<q\cdot r, q, r, n_c, n_s, n_k\right>$ and its SHA1 hash with $pk^{(i)}$ and sends it along with $\left<n_c, n_s, q, r, fp^{(i)}\right>$ to the server. A rather complex padding schema is used;}
-        \item{The server generates his Diffie-Hellman ephemeral key $s$ of 2048-bits, chooses $g, p$ and computes $g_s = g^s \mod{p}$. Finally, it symmetrically encrypts both $\left<n_c, n_s, g, p, g_s, t_1\right>$ and its SHA1 hash and sends it along with $\left<n_c, n_s\right>$.}
+        \item{The server generates his Diffie-Hellman ephemeral key $s$ of 2048-bits, chooses $g, p$ and computes $g_s = \modexp{g}{s}{p}$. Finally, it symmetrically encrypts both $\left<n_c, n_s, g, p, g_s, t_1\right>$ and its SHA1 hash and sends it along with $\left<n_c, n_s\right>$.}
     \end{enumerate}
 
     Notice that the client is supposed to check that:
     \begin{itemize}
+        \label{item:DH-clients-checks}
         \item{$p$ is a safe 2048-bit prime, where safe means that both $p$ and $\frac{p-1}{2}$ are prime and $2^{2047} < p < 2^{2048}$;}
         \item{$g$ is a generator for $\frac{p-1}{2}$.}
     \end{itemize}
@@ -116,11 +117,14 @@ A successful protocol run consists of three rounds, which are represented schema
     \item[Round 3] In the last round, the client generates his own Diffie-Hellman ephemeral key and shares it with the server.
     \begin{enumerate}
         \setcounter{enumi}{4}
-        \item{The client generates his ephemeral key $c$ of 2048-bits and computes $g_c = g^c \mod{p}$. Then, it symmetrically encrypts both $\left<n_s, n_s, retryID, g_c\right>$ and its SHA1 hash and sends them along with $\left<n_c, n_s\right>$. The $retryID$ starts at zero at the time of the first attempt, otherwise is based on the values from the last failed attempt;}
-        \item{The server is now able to compute the authorization key as $k_{CS} = g_c ^ s \mod{p}$. Assuming server checks pass, S sends an acknowledgment for the new key: $\left<n_c, n_s, \mbox{hash}\left(k_{CS}\right)\right>$.}
+        \item{The client generates his ephemeral key $c$ of 2048-bits and computes $g_c = \modexp{g}{c}{p}$. Then, it symmetrically encrypts both $\left<n_s, n_s, retryID, g_c\right>$ and its SHA1 hash and sends them along with $\left<n_c, n_s\right>$. The $retryID$ starts at zero at the time of the first attempt, otherwise is based on the values from the last failed attempt;}
+        \item{The server is now able to compute the authorization key as $\key{CS} = \modexp{g_c}{s}{p}$. Assuming server checks pass, S sends an acknowledgment for the new key: $\left<n_c, n_s, \hash{\key{CS}}\right>$.}
     \end{enumerate}
 
 \end{description}
+
+\subsection{Security goals}
+TODO (?)
 
 \subsection{Implementation notes}
 TODO (?)
@@ -132,14 +136,14 @@ TODO (?)
 
 
 
-\section{Cloud-chat encryption schema}
+\section{Cloud chat encryption schema}
 \label{sec:cloud-chat}
 
 %% Cloud-chat encryption schema %%
 \begin{figure}[t]
     \centering
     \includegraphics{cloud-chats}
-    \caption{MTProto2.0 Cloud-chat protocol.\\Representation inspired by the Telegram official one.}
+    \caption{MTProto2.0 cloud chat protocol.\\Representation inspired by the Telegram's official one.}
     \label{fig:cloud-chat-protocol}
     \end{figure}
 
@@ -153,11 +157,15 @@ Infinite Garble Extension (in short, IGE) is a block cipher mode, lesser-known t
 IGE can be defined with the following formula:
 
 \begin{equation}
-c_i = f_K(m_i \oplus c_{i-1}) \oplus m_{i-1}
+\begin{aligned}
+    c_i &= f_K(m_i \oplus c_{i-1}) \oplus m_{i-1} \\
+    c_0 &= iv_1 \\
+    m_0 &= iv_2 
+\end{aligned}
 \end{equation}
 
 where $f_K$ stands for the encrypting function (like AES) with key $K$
-and $i$ goes from 1 to $n$ $–$ the number of plaintext blocks. Two initialization vectors are also needed. \Cref{fig:IGE} summarizes how the encryption in IGE mode works.
+and $i$ goes from 1 to $n$ - the number of plaintext blocks. Two initialization vectors, $iv_1$ and $iv_2$, are also needed. \Cref{fig:IGE} summarizes how the encryption in IGE mode works.
 
 \begin{figure}[t]
     \centering
@@ -181,69 +189,63 @@ As pointed out by \cite{Telegram-AFAQ-IGE}, the Telegram developers team is awar
 \setlength{\instdist}{3cm}
 \setmscoptions
 \begin{msc}{}
-\setmscscale{.8} 
+\setmscscale{.8}
 
 \declinst{alice}{}{Alice}
 \declinst{server}{}{Server}
 \declinst{bob}{}{Bob}
 
+% Initial knowledge (auth keys)
+\action*{Knows $\key{AS}, \key{BS}$}{server}
+\action*{Knows $\key{AS}$}{alice}
+\action*{Knows $\key{BS}$}{bob}
 
-\action*{\parbox{4.5cm}{\centering
-    Knows $k_{AS}, k_{BS}$
-}}{server}
-
-\action*{\parbox{4.5cm}{\centering
-    Knows $k_{AS}$
-}}{alice}
-
-\action*{\parbox{4.5cm}{\centering
-    Knows $k_{BS}$
-}}{bob}
-
+\nextlevel[3]
+\mess{$\enc{\func{getDhConfig}{}}{\key{AS}}$}{alice}{server}
 \nextlevel[2]
-\action*{\parbox{4.5cm}{\centering
-    Gets $g, p$\\
+\mess{$\enc{g, p}{\key{AS}}$}{server}{alice}
+\nextlevel
+
+\action*{\parbox{4cm}{\centering
     Generates $sid$\\
-    $a \in \Z_p$\\
-    $g_a := g^a \mod{p}$\\
-    $M_1 := g, p, sid, g_a$
+    $a \in \group{p}$\\
+    $g_a := \modexp{g}{a}{p}$
 }}{alice}
 
-\nextlevel[7]
+\nextlevel[5]
 
 %% TODO: Telegram webpage does not seem to specify HOW this is encrypted!!
 %% UPDATE: It actually (kinda) does: it's encrypted as a cloud-chat message! For simplicity, keep this notation and explain its meaning in the written part.
-\mess{$\left\{M_1\right\}_{k_{AS}}$}{alice}{server}
+\mess{$\enc{sid, B, g_a}{\key{AS}}$}{alice}{server}
 \nextlevel
-\mess{$\left\{M_1\right\}_{k_{BS}}$}{server}{bob}
+\mess{$\enc{sid, B, A, g_a}{\key{BS}}$}{server}{bob}
+\nextlevel[2]
+\mess{$\enc{\func{acceptChat}{}}{\key{BS}}$}{bob}{server}
+\nextlevel[2]
+\mess{$\enc{g, p}{\key{BS}}$}{server}{bob}
+\nextlevel
 
-\nextlevel
-\action*{\parbox{4.5cm}{\centering
-    $b \in \Z_p$\\
-    $g_b := g^b \mod{p}$\\
-    $k_{AB} := g_a ^ b \mod{p}$\\
-    $M_2 := sid, g_b, \mbox{fpk}\left(k_{AB}\right)$
+\action*{\parbox{4cm}{\centering
+    $b \in \group{p}$\\
+    $g_b := \modexp{g}{b}{p}$\\
+    $\key{AB} := \modexp{g_a}{b}{p}$
 }}{bob}
 
-\nextlevel[6]
-\mess{$\left\{M_2\right\}_{k_{BS}}$}{bob}{server}
+\nextlevel[5]
+\mess{$\enc{sid, g_b, \sha{1}{k_{AB}}}{\key{BS}}$}{bob}{server}
 \nextlevel
-\mess{$\left\{M_2\right\}_{k_{AS}}$}{server}{alice}
+\mess{$\enc{sid, B, g_b, \sha{1}{k_{AB}}}{\key{AS}}$}{server}{alice}
+\nextlevel
 
-\nextlevel
-\action*{\parbox{5cm}{\centering
-    $k_{AB} := g_b ^ a \mod{p}$\\
-    Generates $payload$\\
-    $mk := \mbox{sha256}\left(k_{AB}, payload\right)$\\
-    $key, iv = \mbox{kdf}\left(k_{AB}, mk\right)$\\
-    $C := \left\{payload\right\}_{key, iv}$
-    $msg := \mbox{fpk}\left(k_{AB}\right), mk, C$
+\action*{\parbox{4cm}{\centering
+    $\key{AB} := \modexp{g_b}{a}{p}$\\
+    Generates $msg$
 }}{alice}
 
-\nextlevel[8]
-\mess{$\left\{msg\right\}_{k_{AS}}$}{alice}{server}
+\nextlevel[5]
+\mess{$\enc{\enc{msg}{\key{AB}}}{\key{AS}}$}{alice}{server}
 \nextlevel
-\mess{$\left\{msg\right\}_{k_{BS}}$}{server}{bob}
+\mess{$\enc{\enc{msg}{\key{AB}}}{\key{BS}}$}{server}{bob}
 
 \end{msc}
 
@@ -252,10 +254,19 @@ As pointed out by \cite{Telegram-AFAQ-IGE}, the Telegram developers team is awar
 \label{fig:secret-chat-protocol}
 \end{figure}
 
-Telegram secret chats deal with end-to-end encryption between two clients (as usual, let us call the clients Alice and Bob, or A and B for brevity). After both clients have shared an authorization key with the Telegram server S, they can decide to engage themselves in a run of the secret chat protocol, allowing them to share, using a Diffie-Hellman key exchange, a shared secret. Notice that the server acts as a forwarder: every message sent from a client A to another client B is sent to the server, encrypted as a cloud chat message shown in \cref{sec:cloud-chat} with the authorization key of A; the server then decrypts the message and encrypts it as a cloud chat message using the authorization key of B and finally sends it to B. The writing $\left\{M\right\}_{k_{AS}}$ in \cref{fig:secret-chat-protocol} expresses that the message $M$ has been encrypted with the authorization key $k_{AS}$ using the cloud chat encryption schema.
+Telegram secret chats deal with end-to-end encryption between two clients (as usual, let us call the clients Alice and Bob, or A and B for brevity). After both clients have shared an authorization key with the Telegram server S, they can decide to engage themselves in a run of the secret chat protocol, allowing them to share, using a Diffie-Hellman key exchange, a shared secret. Notice that the server acts as a forwarder: every message sent from a client A to another client B is sent to the server, encrypted as a cloud chat message shown in \cref{sec:cloud-chat} with the authorization key of A; the server then decrypts the message and encrypts it as a cloud chat message using the authorization key of B and finally sends it to B. The writing $\enc{M}{\key{AS}}$ in \cref{fig:secret-chat-protocol} expresses that the message $M$ has been encrypted with the authorization key $\key{AS}$ using the cloud chat encryption schema.
 
+Let us describe the protocol steps, which are summed up in \cref{fig:secret-chat-protocol}. We will examine a run where Alice request the secret-chat. Notice that we assume that both Alice and Bob have already exchanged an authorization key with the server ($\key{AS}$ and $\key{BS}$, respectively).
 
+\begin{enumerate}
+    \item{First of all, client A retrieves Diffie-Hellman parameters ($p, g$) from the server. Then, it generates a Diffie-Hellman ephemeral key $a$ and a session identifier $sid$. Finally, it computes his Diffie-Hellman half key $g_a = \modexp{g}{a}{p}$ and sends $\left<sid, B, g_a\right>$ to client B;}
+    \item{Client B receives the secret chat request and may either accept it or deny it. Upon accepting it, it receives $p, g$, generates his ephemeral key $b$, computes his half key $g_b = \modexp{g}{b}{p}$ and the newly created secret chat key $\key{AB} = \modexp{g_a}{b}{p}$. Lastly, it sends $\left<sid, g_b, \sha{1}{\key{AB}}\right>$ to client A. The hash function performed on the key is, as stated in the official documentation, only used as a sanity check for client developers;}
+    \item{Client A receives the half key of B $g_b$ and uses it to compute the secret chat key $\key{AB} = \modexp{g_b}{a}{p}$. If the fingerprint of the key matches the one sent by B, it accepts the secret chat and can start sending and receiving messages\footnote{The encryption schema used to encrypt end-to-end messages is very similar to the cloud chat schema. The main difference is in the composition of the message. Please refer to \cite{Telegram-EndToEnd} for more details.}.}
+\end{enumerate}
 
+Mind that Diffie-Hellman generator ($g$), ephemeral keys ($a, b$) and half keys ($g_a, g_b$) are supposed to be checked by the clients as shown in \cref{item:DH-clients-checks}. Additionally, they should check all these values are greater then $1$ and smaller then $p-1$. Telegram team also recommends to check that $2^{2048}\leq g_a, g_b \leq \left(p-2\right)^{2064}$.
+
+Notice that, as this exchange lacks authentication of the two clients, a compromised server can easily perform a classic Diffie-Hellman man-in-the-middle attack \cite{DH-MITM}. To this end, Telegram requires the clients to check if their key fingerprints matches. This must be done in an authenticated way using an out-of-band channel (e.g. in person).
 
 \section{Rekeying protocol}
 \label{sec:rekeying}
