@@ -146,7 +146,7 @@ rule CompromiseAuthProtClientExponent:
 Using these compromise rule, we can also check if the protocol is secure in the eCK model \cite{eCK}. The eCK model assumes, in the case of an authenticated key exchange, two parties, each having a long-term and an ephemeral secret. Of this four pieces of information, the eCK model allows to reveal any subset of these that does not contain both long-term and ephemeral secrets.
 In the case of MTProto2.0, the authorization protocol does not strictly respect the eCK model as the client has no long-term secret. Moreover, intuitively, we can already notice that the protocol is not secure in the eCK model: revealing the client ephemeral secret $n_k$ allows the attacker to perform a classic man-in-the-middle attack on the Diffie-Hellman exchange \cite{MITM-DH}.
 
-\subsection{Security properties lemmas}
+\subsection{Security properties verification}
 Every rule in the protocol execution is labelled with action facts. We then use these to model security properties. Following the Proverif formalisation, we have modeled several forms of key agreement, authentication of parties and key secrecy, along with observational equivalence queries on the secret nonce $n_k$ and on the authorization key. In the next paragraphs we are going to examine lemmas and related results in further details.
 
 \paragraph{Key agreement}
@@ -329,18 +329,22 @@ rule LemmaAuthProtAuthKeyEquivalence:
 \end{lstlisting}
 
 
+
+
+
 \section{Cloud chat encryption schema}
+\label{sec:cloud-chat-formalisation}
 
 \subsection{Encryption formalisation}
 Cloud chat encryption has been simplified to suit the symbolic model better.
-First of all, the key derivation function returns only the key. Notice that, as both key and initialization vector are derived from the same term, once the adversary is able to compute the key it would be able to compute the IV too. Hence, it is not modeled as it would only add complexity to the model without bringing any benefit.
+First of all, the key derivation function returns only the key. Notice that, as both key and initialization vector are derived from the same terms, once the adversary is able to compute the key it would be able to compute the IV as well. Hence, it is not modeled as it would only add complexity to the model without bringing any benefit.
 
-A function \lstinline{msgKey/2} is used to create the message key from the message and the authorization key. Then, the message key is used to create the encryption key for the message, together with the authorization key, using the \lstinline{genKey/2} primitive. The plaintext message is encrypted using the built-in \lstinline{symmetric-encryption}. The final message that is sent on the channel is composed of the fingerprint of the authorization key (using \lstinline{keyID/1}), the message key and the encrypted message. Notice that functions \lstinline{msgKey/2}, \lstinline{genKey/2} and \lstinline{keyID/1} have no associated equation (i.e. are considered perfect).
+A function \lstinline{msgKey/2} is used to create the message key from the message and the authorization key. Then, the message key is used to create the encryption key for the message, together with the authorization key, using the \lstinline{genKey/2} primitive. The plaintext message is encrypted using the built-in \lstinline{symmetric-encryption}. The final message that is sent on the channel is composed of the fingerprint of the authorization key (using \lstinline{keyID/1}), the message key and the encrypted message. Notice that functions \lstinline{msgKey/2}, \lstinline{genKey/2} and \lstinline{keyID/1} have no associated equation (i.e. are considered perfect hashing functions).
 
 Four different rules have been created: two are used to exchange messages from client to server and the other two for messages from server to client. This approach allows us to test for secrecy in both directions. Here is an example of the rule used to model a client to server message:
 
 \begin{lstlisting}
-  rule ClientCloudChatSendsMessage [color=#E2C290]:
+  rule ClientCloudChatSendsMessage:
     let
       msg = <'CC_CtoS', ~sessionID, ~m>
       mk  = msgKey(msg, authKey)
@@ -358,7 +362,7 @@ Four different rules have been created: two are used to exchange messages from c
 
 Notice on line 3 that we use a public constant \lstinline{'CC_CtoS'} to differentiate client to server from server to client messages.
 
-\subsection{Security properties lemmas}
+\subsection{Security properties verification}
 
 \paragraph{Secrecy and forward secrecy} The cloud chat encryption schema is essentially employed to obtain secrecy on messages exchanges between a client and a server, after they have negotiated an authorization key.
 The following lemma proves secrecy from client to server. A very similar one is used to verify secrecy of messages from server to client.
@@ -366,9 +370,9 @@ The following lemma proves secrecy from client to server. A very similar one is 
 \begin{lstlisting}
 lemma LemmaCloudChatSecrecyClientToServer:
   "
-    /* Whenever a client sends a cloud message to the server */
     ∀ sid msg authKey #i #j #r.
       (
+        /* Whenever a client sends a cloud message to the server */
         ClientSendsCloudMessage(sid, msg, authKey) @i ∧
 
         /* and the server receives it */
@@ -383,8 +387,8 @@ lemma LemmaCloudChatSecrecyClientToServer:
         (∃ #r.      CompromisedAuthKey(authKey) @r) ∨
         (∃ skey #r. CompromisedPrivateKey(skey) @r) ∨
         (∃ n #r.    CompromisedNk(n) @r) ∨
-        (∃ c #r.    CompromisedClientExponent(c) @r) ∨
-        (∃ s #r.    CompromisedServerExponent(s) @r)
+        ((∃ c #r.   CompromisedClientExponent(c) @r) ∧
+        (∃ s #r.    CompromisedServerExponent(s) @r))
       )
   "
 \end{lstlisting}
@@ -398,4 +402,256 @@ This lemma actually means that messages are secure, unless:
 
 As seen in \cref{sec:auth-prot-formalisation}, compromising any of these secrets leads to a lack of secrecy on they key. Additionally, also che compromise key itself can be compromised to break cloud chat secrecy.
 
-Notice that this means that perfect forward secrecy does not hold in cloud chats as an attacker that is able to compromise the authorization key can decrypt both past and future messages (as well as forging them, impersonating the client to the server).
+As the lemma above is also strict (i.e. removing any event leads to an attack trace), this also means that perfect forward secrecy does not hold in cloud chats as an attacker that is able to compromise the authorization key can decrypt both past and future messages (as well as forging them, effectively impersonating the client to the server).
+
+\section{Secret chat}
+A secret chat can be initiated after clients have both shared an authorization key with the server. To create a shared secret (the \textit{secret chat key}) between two clients, MTProto2.0 uses, as already seen in \cref{sec:secret-chat}, a Diffie-Hellman key exchange in which the Telegram server acts as a forwarder.
+
+As we have already analyzed security of the authorization protocol and of the cloud chat encryption in \cref{sec:auth-prot-formalisation,sec:cloud-chat-formalisation}, in the formalisation we do not encrypt messages with the authorization key, nor we use the server as a forwarder. Instead, we execute the secret chat protocol exchanges as if they were plaintext: this allows the attacker to act as the server (i.e. having knowledge of both authorization key and forwarding messages) and to manipulate messages freely \cite{MTProto2-Proverif}. Moreover, removing this layer of encryption allows us to simplify the protocol model, to formulate stronger security properties and to obtain higher efficiency.
+
+\subsection{Exchanges formalisation}
+%% Secret-chat protocol %%
+\begin{figure}[!t]
+  \setlength{\instdist}{3cm}
+  \setmscoptions
+  \begin{msc}{}
+    \setmscscale{.8}
+
+    \declinst{alice}{}{Alice}
+    \declinst{bob}{}{Bob}
+
+    \action*{\parbox{3.5cm}{\centering
+        Knows $\key{AS}$\\
+        Knows $g$\\
+        Generates $sID$\\
+        a $\in \group{p}$\\
+        $g_a := \modexp{g}{a}{p}$
+      }}{alice}
+    \action*{Knows $\key{BS}$}{bob}
+
+    \nextlevel[7]
+    \mess{$sID, A, B, g_a$}{alice}{bob}
+    \nextlevel
+
+    \action*{\parbox{3.5cm}{\centering
+        Knows $g$\\
+        $b \in \group{p}$\\
+        $g_b := \modexp{g}{b}{p}$\\
+        $\key{AB} := \modexp{g_a}{b}{p}$
+      }}{bob}
+
+    \nextlevel[6]
+    \mess{$sID, A, B, g_b, \func{fps}{k_{AB}}$}{bob}{alice}
+    \nextlevel
+
+    \action*{\parbox{4cm}{\centering
+        $\key{AB} := \modexp{g_b}{a}{p}$\\
+        Generates $msg$
+      }}{alice}
+
+    \nextlevel[3]
+    \condition{Out-of-band $\key{AB}$ fingerprint comparison}{alice,bob}
+    \nextlevel[4]
+    \mess{$\enc{msg}{\key{AB}}$}{alice}{bob}
+
+  \end{msc}
+
+  \centering
+  \caption{MTProto2.0 Secret-chat protocol formalisation}
+  \label{fig:secret-chat-protocol-formalisation}
+\end{figure}
+
+First of all, as we consider authorization keys inherently secure, we separate this model from the authorization one. Instead, we replace the creation of authorization keys with a simple rule:
+
+\begin{lstlisting}
+rule GenerateAuthKey:
+    [ In(user), Fr(~a), Fr(~b) ]
+  --[ ChoosePrincipal(user, 'Alice', 'Bob') ]->
+    [ !AuthKeyClient(user, $Server, 'g' ^ ~a ^ ~b) ]
+\end{lstlisting}
+
+Skipping the authorization protocol setup makes this model much more efficient.
+
+Additionally, we allow the attacker to register an authorization key for itself:
+
+\begin{lstlisting}
+rule GenerateAttackerAuthKey:
+  let authKey = 'g' ^ ~a ^ ~b in
+    [ Fr(~a), Fr(~b) ]
+  -->
+    [ !AuthKeyClient('Eve', $Server, authKey), Out(authKey) ]
+\end{lstlisting}
+
+
+Following the Proverif formalisation, we explicitly name clients and we also allow the attacker to choose their roles (i.e. who is the initiator, who the initiator talks to, who the responder is). We apply restriction rules to make sure that the initiator is always honest: % TODO: i've never said what restriction rules were... this maybe needs to be added?
+
+\begin{lstlisting}
+restriction RestrictionChoosePrincipal:
+  "
+    ∀ X Y Z #i.
+      ChoosePrincipal(X, Y, Z) @i ==> ((X = Y) ∨ (X = Z))
+  "
+\end{lstlisting}
+
+Having explicitly named clients, we will be able to prove additional authentication security properties.
+Finally, we model the QR-code comparison with the following rules:
+
+\begin{lstlisting}
+rule PerformOutOfBandKeyComparison:
+    [ 
+      !QR(aID, aUser, bUser, sessionKey),
+      !QR(bID, bUser, aUser, sessionKey)
+    ]
+  --[ 
+      /* Rule out the possibility of sessions of a client with itself */
+      NotEq(aUser, bUser),
+
+      OutOfBandKeyComparisonSucceeded(aID, aUser, bUser, sessionKey),
+      OutOfBandKeyComparisonSucceeded(bID, bUser, aUser, sessionKey)
+    ]->
+    [
+      !QROK(aID, aUser, bUser, sessionKey),
+      !QROK(aID, bUser, aUser, sessionKey)
+    ]
+
+rule SkipOutOfBandKeyComparison:
+    [ !QR(aID, aUser, bUser, sessionKey) ]
+  --[ OutOfBandKeyComparisonSkipped(aID, aUser, sessionKey)]->
+    [ !QROK(aID, aUser, bUser, sessionKey) ]
+
+restriction RestrictionNotEqual:
+  "∀ x y #i. NotEq(x, y) @i ==> ¬(x = y)"
+\end{lstlisting}
+
+The persistent fact \lstinline{!QR} is created by each party after they have computed the secret chat key. The above rules model both the correct and incorrect behaviour of clients and allows to specify properties in which a specific behaviour is executed. The correct behaviour is the one express by the \lstinline{PerformOutOfBandKeyComparison} rule, where the client implicitly checks that the sessionKey he computed is the same of the other party. The incorrect behaviour in rule \lstinline{SkipOutOfBandKeyComparison} models a client that does not match the key fingerprint: as this is the only way of authenticating parties to each other, skipping the comparison possibly results in a Diffie-Hellman man-in-the-middle attack.
+
+Additionally, two rules have been added to allow message sending and receiving:
+
+\begin{lstlisting}
+rule SecretChatSend:
+  let
+    mk  = msgKey(~m, sessionKey)
+    key = genKey(mk, sessionKey)
+    c   = <keyID(sessionKey), mk, senc(~m, key)>
+  in
+    [ 
+      !SecretChatClient(X, iUser, rUser, xID, chatID, sessionKey, authKey),
+      Fr(~m)
+    ]
+  --[
+      ClientSendsSecretChatMsg(chatID, X, iUser, rUser, sessionKey, ~m)
+    ]->
+    [ Out(c) ]
+
+rule SecretChatReceive:
+  let
+    mk  = msgKey(~m, sessionKey)
+    key = genKey(mk, sessionKey)
+    c   = <keyID(sessionKey), mk, senc(~m, key)>
+  in
+    [
+      !SecretChatClient(X, iUser, rUser, xID, chatID, sessionKey, authKey),
+      In(c)
+    ]
+  --[ ClientReceivesSecretChatMsg(chatID, X, iUser, rUser, sessionKey, ~m) ]->
+    []
+\end{lstlisting}
+
+\Cref{fig:secret-chat-protocol-formalisation} shows the secret chat protocol, with the above simplification.
+
+\subsection{Security properties verification}
+
+Two main properties should be satisfied by the secret chat protocol: secrecy and authentication.
+
+
+\paragraph{Secrecy} This is, of course, one of the most important property for an end-to-end chat. MTProto2.0 guarantees secrecy under the assumption that clients compare the secret chat key fingerprint out-of-band. This mechanism is also used, for example, by Signal \cite{SignalProtocol}. Formally, Tamarin is able to prove the following secrecy lemma:
+
+\begin{lstlisting}
+lemma LemmaSecretChatSecrecy:
+  "
+    /* Whenever the client sends a secret chat message msg */
+    ∀ chatID X iUser rUser sessionKey msg #i #j.
+      ClientSendsSecretChatMsg(chatID, X, iUser, rUser, sessionKey, msg) @i ∧
+      
+      /* but the attacker knows it */
+      K(msg) @j
+      ==>
+      (
+        /* then clients skipped the QR validation */
+        ∃ a #r. OutOfBandKeyComparisonSkipped(a, X, sessionKey) @r
+      )
+  "
+\end{lstlisting}
+
+In another words, whenever a client sends a message then it is secret, unless clients did not skip the key fingerprint comparison. Let us stress on the fact that this result is independent from the secrecy of the authorization key. Hence, if clients compare the fingerprint correctly, end-to-end encryption holds even against a compromised server.
+
+\paragraph{Authentication}
+Many variants of authentication have been proven. The most basic one is the following:
+
+\begin{lstlisting}
+  lemma LemmaSecretChatAuthentication1:
+  "
+    /* Whenever a client received a secret chat message */
+    ∀ chatID1 X iUser rUser msg sessionKey #i.
+      ClientReceivesSecretChatMsg(chatID1, X, iUser, rUser, sessionKey, msg) @i
+      ==>
+      (
+        /* then it was sent by another (honest) client */
+        (∃ Y chatID2 #r. 
+          ClientSendsSecretChatMsg(chatID2, Y, iUser, rUser, sessionKey, msg) @r) ∨
+        (∃ Y chatID2 #r. 
+          ClientSendsSecretChatMsg(chatID2, Y, rUser, iUser, sessionKey, msg) @r) ∨
+
+        /* or clients involved have skipped the QR validation */
+        (
+          ∃ Y xID yID #r1 #r2. 
+            OutOfBandKeyComparisonSkipped(xID, X, sessionKey) @r1 ∧
+            OutOfBandKeyComparisonSkipped(yID, Y, sessionKey) @r2
+        )
+      )
+  "
+\end{lstlisting}
+
+This lemma states that if an honest client has received a message in session $chatID1$ and with key $sessionKey$, then there was another honest client which sent it in session $chatID2$ with the same key or that clients have skipped verification. Notice that we cannot match session (i.e. $chatID1 = chatID2$) as the server is able to forward messages modifying the session identifier. As also pointed to by M. Miculan and N. Vitacolonna \cite{MTProto2-Proverif}, this does not seem to pose any security risks.
+
+As already stated, skipping validation of the key's fingerprint results in a classical Diffie-Hellman MitM attack, which obviously invalidates authentication.
+
+\paragraph{Observational equivalence} We have tried to model several observational equivalence properties, such as:
+\begin{itemize}
+  \item Indistinguishability of a client's exponent from a random value. This should not hold as the attacker can compute the DH key (using the exponent and the other half of the key) and compare fingerprints.
+  \item Indistinguishability of a secret chat key and a random value. This should not hold as the attacker can compare the key fingerprint with the \nth{2} message of the protocol.
+  \item Indistinguishability of message exchanged with the secret chat key and a random value. This should hold, as long as the key used to encrypt the message is kept secret.
+\end{itemize}
+
+Again, Tamarin does not terminate when trying to prove these properties. These three rules are used to model observational equivalence:
+
+\begin{lstlisting}
+rule SecretChatExponentRoR:
+    [
+      !SecretChatClient(X, iUser, rUser, xID, chatID, sessionKey, authKey),
+      Fr(~z)
+    ]
+  -->
+    [ Out(diff(~z, xID)) ]
+
+rule SecretChatSessionKeyRoR:
+    [ 
+      !SecretChatClient(X, iUser, rUser, xID, chatID, sessionKey, authKey),
+      Fr(~r)
+    ]
+  -->
+    [ Out(diff(sessionKey, ~r)) ]
+
+rule SecretChatReceiveRoR:
+  let
+    mk  = msgKey(sessionKey, ~m)
+    key = kdfKey(sessionKey, mk)
+    c   = <keyID(sessionKey), mk, senc(~m, key)>
+  in
+    [ 
+      !SecretChatClient(X, iUser, rUser, xID, chatID, sessionKey, authKey),
+      In(c), Fr(~r)
+    ]
+  -->
+    [ Out(diff(~m, ~r)) ]
+\end{lstlisting}

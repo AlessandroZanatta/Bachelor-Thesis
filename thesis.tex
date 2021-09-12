@@ -39,12 +39,12 @@
 \usepackage[T1]{fontenc}
 \usepackage{courier} % Font for listings
 
-\newcommand\keywordstyle[1]{{\footnotesize\color{MidnightBlue}\bfseries\mathversion{bold}#1}}
+\newcommand\keywordstyle[1]{{\scriptsize\color{MidnightBlue}\bfseries\mathversion{bold}#1}}
 
 \lstset{
   numbers=left,
   xleftmargin=\parindent,
-  basicstyle=\small\linespread{1}\ttfamily,
+  basicstyle=\footnotesize\linespread{1}\ttfamily,
   breaklines=true,
   captionpos=b,
   aboveskip=10pt,
@@ -55,7 +55,7 @@
   {∧}{{\keywordstyle{$\land$}}}1
   {∨}{{\keywordstyle{$\lor$}}}1
   {¬}{{\keywordstyle{$\neg$}}}1
-  {==>}{{\keywordstyle{$\Longrightarrow$}}}1
+  {==>}{{\keywordstyle{ $\Longrightarrow$}}}2
 }
 \graphicspath{ {./images/} } % images path
 
@@ -132,10 +132,10 @@
   keywordstyle=[3]\color{Green}\bfseries,
   keywordstyle=[4]\color{RedViolet}\bfseries,
   alsoletter={^,==>,|,&,.},
-  keywords={let, in, Out, In, K, KU, Fr, ^, senc, sdec, adec, aenc, ~, All, Ex, not, ., &, |, ==>, diff},
+  keywords={Out, In, K, KU, Fr, ^, senc, sdec, adec, aenc, ~, All, Ex, not, ., &, |, ==>, diff},
   keywords=[2]{},
   keywords=[3]{},
-  keywords=[4]{rule, lemma},
+  keywords=[4]{rule, lemma, restriction, let, in},
   sensitive=true,
   morecomment=[l]{//},
   morecomment=[n][\color{OliveGreen}\itshape]{/*}{*/},
