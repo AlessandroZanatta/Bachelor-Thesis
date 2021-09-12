@@ -1,4 +1,6 @@
 \def\thudbabelopt{english}
+\PassOptionsToPackage{usenames}{xcolor}
+\PassOptionsToPackage{dvipsnames}{xcolor}
 \documentclass[target=bach,aauheader=]{thud}
 
 %% --- Information about the thesis --- %%
@@ -31,6 +33,30 @@
 \usepackage{graphicx} % for images
 \usepackage{textgreek} % greek letters out of math mode
 \usepackage{caption} % captions for equations (outside of floats, in general)
+\usepackage{listings}
+\usepackage[super]{nth}
+\usepackage{multicol}
+\usepackage[T1]{fontenc}
+\usepackage{courier} % Font for listings
+
+\newcommand\keywordstyle[1]{{\footnotesize\color{MidnightBlue}\bfseries\mathversion{bold}#1}}
+
+\lstset{
+  numbers=left,
+  xleftmargin=\parindent,
+  basicstyle=\small\linespread{1}\ttfamily,
+  breaklines=true,
+  captionpos=b,
+  aboveskip=10pt,
+  belowskip=10pt,
+  literate=%
+  {∃}{{\keywordstyle{$\exists$}}}1
+  {∀}{{\keywordstyle{$\forall$}}}1
+  {∧}{{\keywordstyle{$\land$}}}1
+  {∨}{{\keywordstyle{$\lor$}}}1
+  {¬}{{\keywordstyle{$\neg$}}}1
+  {==>}{{\keywordstyle{$\Longrightarrow$}}}1
+}
 \graphicspath{ {./images/} } % images path
 
 \DeclareCaptionType{equ}[][]
@@ -43,6 +69,7 @@
   \drawframe{no}
   \centering
 }
+
 
 % Multiline comments
 \newcommand{\comment}[1]{}
@@ -95,13 +122,67 @@
 % spacing in math multiline mode
 \setlength{\jot}{1pt}
 
-%% --- Document start --- %%
+%% -------------------------------------------------------------------------------- %%
+%% Languages listings                                                               %%
+%% -------------------------------------------------------------------------------- %%
+\lstdefinelanguage{tamarin}
+{
+  keywordstyle=\color{MidnightBlue}\bfseries,
+  keywordstyle=[2]\itshape,
+  keywordstyle=[3]\color{Green}\bfseries,
+  keywordstyle=[4]\color{RedViolet}\bfseries,
+  alsoletter={^,==>,|,&,.},
+  keywords={let, in, Out, In, K, KU, Fr, ^, senc, sdec, adec, aenc, ~, All, Ex, not, ., &, |, ==>, diff},
+  keywords=[2]{},
+  keywords=[3]{},
+  keywords=[4]{rule, lemma},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n][\color{OliveGreen}\itshape]{/*}{*/},
+  morestring=[b]',
+  stringstyle=\color{BrickRed},
+}
+
+\lstdefinelanguage{verifpal}
+{
+  keywordstyle=\color{MidnightBlue}\bfseries,
+  keywordstyle=[2]\itshape,
+  keywordstyle=[3]\color{Green}\bfseries,
+  keywordstyle=[4]\color{Orange}\bfseries,
+  alsoletter={->, ?},
+  keywords={principal, attacker, queries, ->, ?},
+  keywords=[2]{Client, Server, Alice, Bob},
+  keywords=[3]{leaks, phase},
+  keywords=[4]{active, passive},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+
+\lstdefinelanguage{proverif}
+{
+  keywordstyle=\color{MidnightBlue}\bfseries,
+  keywordstyle=[2]\itshape,
+  keywordstyle=[3]\color{Green}\bfseries,
+  keywords={table, query, insert, leaks, phase, get, out, event, in, ., ;, attacker, |, new, if, else, then, !, let},
+  alsoletter={., ;, |, !},
+  keywords=[2]{Client, Server},
+  keywords=[3]{},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n][\color{OliveGreen}\itshape]{(*}{*)},
+  morestring=[b]",
+}
+
+%% -------------------------------------------------------------------------------- %%
+%% Document start                                                                   %%
+%% -------------------------------------------------------------------------------- %%
 \begin{document}
 \maketitle
 
 %% Dedica (opzionale)
 \begin{dedication}
-	Al mio cane,\par per avermi ascoltato mentre ripassavo le lezioni.
+  Al mio cane,\par per avermi ascoltato mentre ripassavo le lezioni.
 \end{dedication}
 
 %% Ringraziamenti (opzionali)
@@ -138,6 +219,10 @@ Un bell'abstract va qua!
 \input{./chapters/04_tools_comparison}
 
 \chapter{Formalisation in Tamarin-Prover}
+\input{./chapters/05_tamarin_formalisation}
+
+\chapter{Comparison with Proverif}
+\input{./chapters/06_comparison}
 
 %% Fine dei capitoli normali, inizio dei capitoli-appendice (opzionali)
 % \appendix
@@ -149,41 +234,7 @@ Un bell'abstract va qua!
 %\summary
 
 %% Bibliografia (praticamente obbligatoria)
-\bibliographystyle{plain_\languagename}%% Carica l'omonimo file .bst, dove \languagename � la lingua attiva.
-%% Nel caso in cui si usi un file .bib (consigliato)
+\bibliographystyle{plain_\languagename}
 \bibliography{thud}
-%% Nel caso di bibliografia manuale, usare l'environment thebibliography.
-
-%% Per l'indice analitico, usare il pacchetto makeidx (o analogo).
 
 \end{document}
-
---- Istruzioni per l'aggiunta di nuove lingue ---
-Per ogni nuova lingua utilizzata aggiungere nel preambolo il seguente spezzone:
-    \addto\captionsitalian{%
-        \def\abstractname{Sommario}%
-        \def\acknowledgementsname{Ringraziamenti}%
-        \def\authorcontactsname{Contatti dell'autore}%
-        \def\candidatename{Candidato}%
-        \def\chairname{Direttore}%
-        \def\conclusionsname{Conclusioni}%
-        \def\cosupervisorname{Co-relatore}%
-        \def\cosupervisorsname{Co-relatori}%
-        \def\cyclename{Ciclo}%
-        \def\datename{Anno accademico}%
-        \def\indexname{Indice analitico}%
-        \def\institutecontactsname{Contatti dell'Istituto}%
-        \def\introductionname{Introduzione}%
-        \def\prefacename{Prefazione}%
-        \def\reviewername{Controrelatore}%
-        \def\reviewersname{Controrelatori}%
-        %% Anno accademico
-        \def\shortdatename{A.A.}%
-        \def\summaryname{Riassunto}%
-        \def\supervisorname{Relatore}%
-        \def\supervisorsname{Relatori}%
-        \def\thesisname{Tesi di \expandafter\ifcase\csname thud@target\endcsname Laurea\or Laurea Magistrale\or Dottorato\fi}%
-        \def\tutorname{Tutor aziendale%
-        \def\tutorsname{Tutor aziendali}%
-    }
-sostituendo a "italian" (nella 1a riga) il nome della lingua e traducendo le varie voci.

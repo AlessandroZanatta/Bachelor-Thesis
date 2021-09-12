@@ -1,3 +1,4 @@
+\label{sec:mtproto2-informal}
 
 In this chapter, we will give a brief overview of the MTProto2.0 protocol. A more in-depth and formal description can be found on the official web page \cite{Telegram-MTProto2.0}.
 
@@ -18,74 +19,74 @@ An overview on these protocols will be given in \cref{sec:auth-prot,sec:cloud-ch
 
 %% Authorization protocol %%
 \begin{figure}[!t]
-\setlength{\instdist}{4cm}
-\setmscoptions
-\begin{msc}{}
-\setmscscale{.8} 
+    \setlength{\instdist}{4cm}
+    \setmscoptions
+    \begin{msc}{}
+        \setmscscale{.8}
 
-\declinst{client}{}{Client}
-\declinst{server}{}{Server}
+        \declinst{client}{}{Client}
+        \declinst{server}{}{Server}
 
-\action*{Generates nonces $n_{c}, n_{k}$}{client}
-\action*{\parbox{4.5cm}{\centering 
-    Knows keys $\mbox{sk}^{(1)}, \dots, \mbox{sk}^{(n)}$\\
-    Generates $n_s, g, p$\\
-    Generates proof-of-work primes $q, r$
-}}{server}
-\nextlevel[6]
+        \action*{Generates nonces $n_{c}, n_{k}$}{client}
+        \action*{\parbox{4.5cm}{\centering
+                Knows keys $\mbox{sk}^{(1)}, \dots, \mbox{sk}^{(n)}$\\
+                Generates $n_s, g, p$\\
+                Generates proof-of-work primes $q, r$
+            }}{server}
+        \nextlevel[6]
 
-\mess{$n_{c}$}{client}{server}
-\nextlevel[2]
-\mess{$n_{c}, n_{s}, q \cdot r, \mbox{fp}^{(1)}, \dots, \mbox{fp}^{(n)}$}{server}{client}
+        \mess{$n_{c}$}{client}{server}
+        \nextlevel[2]
+        \mess{$n_{c}, n_{s}, q \cdot r, \mbox{fp}^{(1)}, \dots, \mbox{fp}^{(n)}$}{server}{client}
 
-\nextlevel
-\action*{\parbox{4cm}{\centering
-    Chooses $\mbox{pk}^{(i)}$ matching\\
-    $\mbox{fp}^{(i)}$ for some $i$\\
-    Factorizes $q \cdot r$\\
-    $C_1 := q \cdot r, q, r, n_c, n_s, n_k$
-}}{client}
+        \nextlevel
+        \action*{\parbox{4cm}{\centering
+                Chooses $\mbox{pk}^{(i)}$ matching\\
+                $\mbox{fp}^{(i)}$ for some $i$\\
+                Factorizes $q \cdot r$\\
+                $C_1 := q \cdot r, q, r, n_c, n_s, n_k$
+            }}{client}
 
-\nextlevel[7]
-\mess{$n_c, n_s, q, r, \mbox{fp}^{(i)}, \enc{\sha{1}{C_1}, C_1}{\mbox{pk}^{(i)}}$}{client}{server}
-\nextlevel
+        \nextlevel[7]
+        \mess{$n_c, n_s, q, r, \mbox{fp}^{(i)}, \enc{\sha{1}{C_1}, C_1}{\mbox{pk}^{(i)}}$}{client}{server}
+        \nextlevel
 
-\action*{$\left(k, iv\right) := \kdf{n_s, n_k}$}{client}
-\action*{\parbox{4.5cm}{\centering
-    $s \in \group{p}$\\
-    $g_s := \modexp{g}{s}{p}$\\
-    $key, iv := \kdf{n_s, n_k}$\\
-    $S_1 := n_c, n_s, g, p, g_s, t_1$
-}}{server}
+        \action*{$\left(k, iv\right) := \kdf{n_s, n_k}$}{client}
+        \action*{\parbox{4.5cm}{\centering
+                $s \in \group{p}$\\
+                $g_s := \modexp{g}{s}{p}$\\
+                $key, iv := \kdf{n_s, n_k}$\\
+                $S_1 := n_c, n_s, g, p, g_s, t_1$
+            }}{server}
 
-\nextlevel[6]
-\mess{$n_c, n_s, \enc{\sha{1}{S_1}, S_1}{key, iv}$}{server}{client}
-\nextlevel
+        \nextlevel[6]
+        \mess{$n_c, n_s, \enc{\sha{1}{S_1}, S_1}{key, iv}$}{server}{client}
+        \nextlevel
 
-\action*{\parbox{4.5cm}{\centering
-$c \in \group{p}$\\
-$g_c := \modexp{g}{c}{p}$\\
-Checks $g, p$\\
-$\key{CS} := \modexp{g_s}{c}{p}$\\
-$C_2 := n_c, n_s, retryID, g_c$
-}}{client}
-\nextlevel[7]
+        \action*{\parbox{4.5cm}{\centering
+                $c \in \group{p}$\\
+                $g_c := \modexp{g}{c}{p}$\\
+                Checks $g, p$\\
+                $\key{CS} := \modexp{g_s}{c}{p}$\\
+                $C_2 := n_c, n_s, retryID, g_c$
+            }}{client}
+        \nextlevel[7]
 
-\mess{$n_c, n_s, \enc{\sha{1}{C_2}, C_2}{k, iv}$}{client}{server}
-\nextlevel
+        \mess{$n_c, n_s, \enc{\sha{1}{C_2}, C_2}{k, iv}$}{client}{server}
+        \nextlevel
 
-\action*{\parbox{4.5cm}{\centering
-$\key{CS} := \modexp{g_c}{s}{p}$
-}}{server}
-\nextlevel[3]
+        \action*{\parbox{4.5cm}{\centering
+                $\key{CS} := \modexp{g_c}{s}{p}$
+            }}{server}
+        \nextlevel[3]
 
-\mess{$n_c, n_s, \hash{n_k, \key{CS}}$}{server}{client}
+        \mess{$n_c, n_s, \hash{n_k, \key{CS}}$}{server}{client}
 
 
-\end{msc}
-\centering
-\caption{MTProto2.0 Authorization protocol}
-\label{fig:authorization-protocol}
+    \end{msc}
+    \centering
+    \caption{MTProto2.0 Authorization protocol}
+    \label{fig:authorization-protocol}
 \end{figure}
 
 
@@ -95,40 +96,37 @@ The first time a Telegram client C runs the application, it must negotiate an \t
 A successful protocol run consists of three rounds, which are represented schematically in \cref{fig:authorization-protocol}:
 \begin{description}
     \item[Round 1] In the first round messages are in plaintext. In particular, the client and the server exchange two nonces ($n_c$ and $n_s$). The pair $\left<n_c, n_s\right>$ identifies a session of the authorization protocol. These nonces are sent in every consequent message of the current run of the protocol, both in plaintext and encrypted form.
-    \begin{enumerate}
-        \item{In the first message, the client sends his fresh nonce $n_c$ to the server;}
-        \item{The server answers with the client nonce $n_c$, the server fresh nonce $n_s$, a challenge $q \cdot r \leq 2^{63}$ (which are two primes used as a measure to prevent denial of service, as the client needs to spend resources on factorizing $q \cdot r$ before the server has to commit (more) resources\footnote{Notice that this might not be true as this might be vulnerable to a lookup table approach (e.g. using \href{http://factordb.com}{factordb.com}).}) and a list of public RSA key fingerprints (calculated as the lower 64-bits of the SHA1 of the server public keys).}
-    \end{enumerate}
+        \begin{enumerate}
+            \item{In the first message, the client sends his fresh nonce $n_c$ to the server;}
+            \item{The server answers with the client nonce $n_c$, the server fresh nonce $n_s$, a challenge $q \cdot r \leq 2^{63}$ (which are two primes used as a measure to prevent denial of service, as the client needs to spend resources on factorizing $q \cdot r$ before the server has to commit (more) resources\footnote{Notice that this might not be true as this might be vulnerable to a lookup table approach (e.g. using \href{http://factordb.com}{factordb.com}).}) and a list of public RSA key fingerprints (calculated as the lower 64-bits of the SHA1 of the server public keys).}
+        \end{enumerate}
 
     \item[Round 2] The client decomposes $q\cdot r$ in $\left<q, r\right>$, retrieves the public key of the server $pk^{\left(i\right)}$. The client then generates a nonce $n_k$ of 256 bits. This nonce $n_k$ is supposed to be secret. The pair $\left<n_s, n_k\right>$ is used, by both server and client, to derive, through a derivation function $\mbox{kdf}$, a symmetric encryption key $k$ and an initialization vector $iv$, which will be used in subsequent exchanges.
-    \begin{enumerate}
-        \setcounter{enumi}{2}
-        \item{The client asymmetrically encrypts both $\left<q\cdot r, q, r, n_c, n_s, n_k\right>$ and its SHA1 hash with $pk^{(i)}$ and sends it along with $\left<n_c, n_s, q, r, fp^{(i)}\right>$ to the server. A rather complex padding schema is used;}
-        \item{The server generates his Diffie-Hellman ephemeral key $s$ of 2048-bits, chooses $g, p$ and computes $g_s:= \modexp{g}{s}{p}$. Finally, it symmetrically encrypts both $\left<n_c, n_s, g, p, g_s, t_1\right>$ and its SHA1 hash and sends it along with $\left<n_c, n_s\right>$.}
-    \end{enumerate}
+        \begin{enumerate}
+            \setcounter{enumi}{2}
+            \item{The client asymmetrically encrypts both $\left<q\cdot r, q, r, n_c, n_s, n_k\right>$ and its SHA1 hash with $pk^{(i)}$ and sends it along with $\left<n_c, n_s, q, r, fp^{(i)}\right>$ to the server. A rather complex padding schema is used;}
+            \item{The server generates his Diffie-Hellman ephemeral key $s$ of 2048-bits, chooses $g, p$ and computes $g_s:= \modexp{g}{s}{p}$. Finally, it symmetrically encrypts both $\left<n_c, n_s, g, p, g_s, t_1\right>$ and its SHA1 hash and sends it along with $\left<n_c, n_s\right>$.}
+        \end{enumerate}
 
-    Notice that the client is supposed to check that:
-    \begin{itemize}
-        \label{item:DH-clients-checks}
-        \item{$p$ is a safe 2048-bit prime, where safe means that both $p$ and $\frac{p-1}{2}$ are prime and $2^{2047} < p < 2^{2048}$;}
-        \item{$g$ is a generator for $\frac{p-1}{2}$.}
-    \end{itemize}
+        Notice that the client is supposed to check that:
+        \begin{itemize}
+            \label{item:DH-clients-checks}
+            \item{$p$ is a safe 2048-bit prime, where safe means that both $p$ and $\frac{p-1}{2}$ are prime and $2^{2047} < p < 2^{2048}$;}
+            \item{$g$ is a generator for $\frac{p-1}{2}$.}
+        \end{itemize}
 
     \item[Round 3] In the last round, the client generates his own Diffie-Hellman ephemeral key and shares it with the server.
-    \begin{enumerate}
-        \setcounter{enumi}{4}
-        \item{The client generates his ephemeral key $c$ of 2048-bits and computes $g_c:= \modexp{g}{c}{p}$. Then, it symmetrically encrypts both $\left<n_s, n_s, retryID, g_c\right>$ and its SHA1 hash and sends them along with $\left<n_c, n_s\right>$. The $retryID$ starts at zero at the time of the first attempt, otherwise is based on the values from the last failed attempt;}
-        \item{The server is now able to compute the authorization key as $\key{CS}:= \modexp{g_c}{s}{p}$. Assuming server checks pass, S sends an acknowledgment for the new key: $\left<n_c, n_s, \hash{\key{CS}}\right>$.}
-    \end{enumerate}
+        \begin{enumerate}
+            \setcounter{enumi}{4}
+            \item{The client generates his ephemeral key $c$ of 2048-bits and computes $g_c:= \modexp{g}{c}{p}$. Then, it symmetrically encrypts both $\left<n_s, n_s, retryID, g_c\right>$ and its SHA1 hash and sends them along with $\left<n_c, n_s\right>$. The $retryID$ starts at zero at the time of the first attempt, otherwise is based on the values from the last failed attempt;}
+            \item{The server is now able to compute the authorization key as $\key{CS}:= \modexp{g_c}{s}{p}$. Assuming server checks pass, S sends an acknowledgment for the new key: $\left<n_c, n_s, \hash{\key{CS}}\right>$.}
+        \end{enumerate}
 
 \end{description}
 
+
 \subsection{Security goals}
 TODO (?)
-
-\subsection{Implementation notes}
-TODO (?)
-
 
 
 
@@ -159,11 +157,11 @@ Infinite Garble Extension (in short, IGE) is a block cipher mode, lesser-known t
 IGE can be defined with the following formula:
 
 \begin{equation}
-\begin{aligned}
-    c_i &= f_K(m_i \oplus c_{i-1}) \oplus m_{i-1} \\
-    c_0 &= iv_1 \\
-    m_0 &= iv_2 
-\end{aligned}
+    \begin{aligned}
+        c_i & = f_K(m_i \oplus c_{i-1}) \oplus m_{i-1} \\
+        c_0 & = iv_1                                   \\
+        m_0 & = iv_2
+    \end{aligned}
 \end{equation}
 
 where $f_K$ stands for the encrypting function (like AES) with key $K$
@@ -180,78 +178,78 @@ As pointed out by \cite{Telegram-AFAQ-IGE}, the Telegram developers team is awar
 \section{Secret-chat protocol}
 \label{sec:secret-chat}
 
-Telegram secret chats deal with end-to-end encryption between two clients (as usual, let us call the clients Alice and Bob, or A and B for brevity). After both clients have shared an authorization key with the Telegram server S, they can decide to engage themselves in a run of the secret chat protocol, allowing them to share, using a Diffie-Hellman key exchange, a shared secret. Notice that the server acts as a forwarder: every message sent from a client A to another client B is sent to the server, encrypted as a cloud chat message shown in \cref{sec:cloud-chat} with the authorization key of A; the server then decrypts the message and encrypts it as a cloud chat message using the authorization key of B and finally sends it to B. The writing $\enc{M}{\key{AS}}$ in \cref{fig:secret-chat-protocol} expresses that the message $M$ has been encrypted with the authorization key $\key{AS}$ using the cloud chat encryption schema.
+Telegram secret chats deal with end-to-end encryption between two clients (as usual, let us call the clients Alice and Bob, or A and B for brevity). After both clients have shared an authorization key with the Telegram server S, they can decide to engage themselves in a run of the secret chat protocol, allowing them to share, using a Diffie-Hellman key exchange, a shared secret. Notice that the server acts as a forwarder: every message sent from a client A to another client B is sent to the server, encrypted as a cloud chat message shown in \cref{sec:cloud-chat} with the authorization key of A; the server then decrypts the message and encrypts it as a cloud chat message using the authorization key of B and finally sends it to B. The writing $\enc{M}{\key{AS}}$ in \cref{fig:secret-chat-protocol} expresses that the message $M$ has been encrypted with the authorization key $\key{AS}$ using the cloud chat encryption schema \cref{sec:cloud-chat}.
 
 %% Secret-chat protocol %%
 \begin{figure}[!t]
-\setlength{\instdist}{3cm}
-\setmscoptions
-\begin{msc}{}
-\setmscscale{.8}
+    \setlength{\instdist}{3cm}
+    \setmscoptions
+    \begin{msc}{}
+        \setmscscale{.8}
 
-\declinst{alice}{}{Alice}
-\declinst{server}{}{Server}
-\declinst{bob}{}{Bob}
+        \declinst{alice}{}{Alice}
+        \declinst{server}{}{Server}
+        \declinst{bob}{}{Bob}
 
-% Initial knowledge (auth keys)
-\action*{Knows $\key{AS}, \key{BS}$}{server}
-\action*{Knows $\key{AS}$}{alice}
-\action*{Knows $\key{BS}$}{bob}
+        % Initial knowledge (auth keys)
+        \action*{Knows $\key{AS}, \key{BS}$}{server}
+        \action*{Knows $\key{AS}$}{alice}
+        \action*{Knows $\key{BS}$}{bob}
 
-\nextlevel[3]
-\mess{$\enc{\func{getDhConfig}{}}{\key{AS}}$}{alice}{server}
-\nextlevel[2]
-\mess{$\enc{g, p}{\key{AS}}$}{server}{alice}
-\nextlevel
+        \nextlevel[3]
+        \mess{$\enc{\func{getDhConfig}{}}{\key{AS}}$}{alice}{server}
+        \nextlevel[2]
+        \mess{$\enc{g, p}{\key{AS}}$}{server}{alice}
+        \nextlevel
 
-\action*{\parbox{4cm}{\centering
-    Generates $sID$\\
-    $a \in \group{p}$\\
-    $g_a := \modexp{g}{a}{p}$
-}}{alice}
+        \action*{\parbox{4cm}{\centering
+                Generates $sID$\\
+                $a \in \group{p}$\\
+                $g_a := \modexp{g}{a}{p}$
+            }}{alice}
 
-\nextlevel[5]
+        \nextlevel[5]
 
-%% TODO: Telegram webpage does not seem to specify HOW this is encrypted!!
-%% UPDATE: It actually (kinda) does: it's encrypted as a cloud-chat message! For simplicity, keep this notation and explain its meaning in the written part.
-\mess{$\enc{sID, B, g_a}{\key{AS}}$}{alice}{server}
-\nextlevel
-\mess{$\enc{sID, B, A, g_a}{\key{BS}}$}{server}{bob}
-\nextlevel[2]
-\mess{$\enc{\func{acceptChat}{}}{\key{BS}}$}{bob}{server}
-\nextlevel[2]
-\mess{$\enc{g, p}{\key{BS}}$}{server}{bob}
-\nextlevel
+        %% TODO: Telegram webpage does not seem to specify HOW this is encrypted!!
+        %% UPDATE: It actually (kinda) does: it's encrypted as a cloud-chat message! For simplicity, keep this notation and explain its meaning in the written part.
+        \mess{$\enc{sID, B, g_a}{\key{AS}}$}{alice}{server}
+        \nextlevel
+        \mess{$\enc{sID, B, A, g_a}{\key{BS}}$}{server}{bob}
+        \nextlevel[2]
+        \mess{$\enc{\func{acceptChat}{}}{\key{BS}}$}{bob}{server}
+        \nextlevel[2]
+        \mess{$\enc{g, p}{\key{BS}}$}{server}{bob}
+        \nextlevel
 
-\action*{\parbox{4cm}{\centering
-    $b \in \group{p}$\\
-    $g_b := \modexp{g}{b}{p}$\\
-    $\key{AB} := \modexp{g_a}{b}{p}$
-}}{bob}
+        \action*{\parbox{4cm}{\centering
+                $b \in \group{p}$\\
+                $g_b := \modexp{g}{b}{p}$\\
+                $\key{AB} := \modexp{g_a}{b}{p}$
+            }}{bob}
 
-\nextlevel[5]
-\mess{$\enc{sID, g_b, \sha{1}{k_{AB}}}{\key{BS}}$}{bob}{server}
-\nextlevel
-\mess{$\enc{sID, B, g_b, \sha{1}{k_{AB}}}{\key{AS}}$}{server}{alice}
-\nextlevel
+        \nextlevel[5]
+        \mess{$\enc{sID, g_b, \sha{1}{k_{AB}}}{\key{BS}}$}{bob}{server}
+        \nextlevel
+        \mess{$\enc{sID, B, g_b, \sha{1}{k_{AB}}}{\key{AS}}$}{server}{alice}
+        \nextlevel
 
-\action*{\parbox{4cm}{\centering
-    $\key{AB} := \modexp{g_b}{a}{p}$\\
-    Generates $msg$
-}}{alice}
+        \action*{\parbox{4cm}{\centering
+                $\key{AB} := \modexp{g_b}{a}{p}$\\
+                Generates $msg$
+            }}{alice}
 
-\nextlevel[3]
-\condition{Out-of-band $\key{AB}$ fingerprint comparison}{alice,server,bob}
-\nextlevel[4]
-\mess{$\enc{\enc{msg}{\key{AB}}}{\key{AS}}$}{alice}{server}
-\nextlevel
-\mess{$\enc{\enc{msg}{\key{AB}}}{\key{BS}}$}{server}{bob}
+        \nextlevel[3]
+        \condition{Out-of-band $\key{AB}$ fingerprint comparison}{alice,server,bob}
+        \nextlevel[4]
+        \mess{$\enc{\enc{msg}{\key{AB}}}{\key{AS}}$}{alice}{server}
+        \nextlevel
+        \mess{$\enc{\enc{msg}{\key{AB}}}{\key{BS}}$}{server}{bob}
 
-\end{msc}
+    \end{msc}
 
-\centering
-\caption{MTProto2.0 Secret-chat protocol}
-\label{fig:secret-chat-protocol}
+    \centering
+    \caption{MTProto2.0 Secret-chat protocol}
+    \label{fig:secret-chat-protocol}
 \end{figure}
 
 Let us describe the protocol steps, which are summed up in \cref{fig:secret-chat-protocol}. We will examine a run where Alice request the secret-chat. Notice that we assume that both Alice and Bob have already exchanged an authorization key with the server ($\key{AS}$ and $\key{BS}$, respectively).
@@ -271,59 +269,59 @@ Notice that, as this exchange lacks authentication of the two clients, a comprom
 
 %% Rekeying protocol %%
 \begin{figure}[t]
-\setlength{\instdist}{3.5cm}
-\setmscoptions
-\begin{msc}{}
-\setmscscale{.8}
+    \setlength{\instdist}{3.5cm}
+    \setmscoptions
+    \begin{msc}{}
+        \setmscscale{.8}
 
-\declinst{alice}{}{Alice}
-\declinst{server}{}{Server}
-\declinst{bob}{}{Bob}
+        \declinst{alice}{}{Alice}
+        \declinst{server}{}{Server}
+        \declinst{bob}{}{Bob}
 
-% Initial knowledge (auth keys)
-\action*{Knows $\key{AS}, \key{BS}$}{server}
-\action*{Knows $\key{AS}, \key{AB}, p, g$}{alice}
-\action*{Knows $\key{BS}, \key{AB}, p, g$}{bob}
+        % Initial knowledge (auth keys)
+        \action*{Knows $\key{AS}, \key{BS}$}{server}
+        \action*{Knows $\key{AS}, \key{AB}, p, g$}{alice}
+        \action*{Knows $\key{BS}, \key{AB}, p, g$}{bob}
 
-\nextlevel[2]
-\action*{\parbox{4cm}{\centering
-Generates $eID$\\
-$a \in \group{p}$\\
-$g_a := \modexp{g}{a}{p}$
-}}{alice}
+        \nextlevel[2]
+        \action*{\parbox{4cm}{\centering
+                Generates $eID$\\
+                $a \in \group{p}$\\
+                $g_a := \modexp{g}{a}{p}$
+            }}{alice}
 
-\nextlevel[6]
-\mess{$\enc{\enc{eID, g_a}{\key{AB}}}{\key{AS}}$}{alice}{server}
-\nextlevel
-\mess{$\enc{\enc{eID, g_a}{\key{AB}}}{\key{BS}}$}{server}{bob}
-\nextlevel
+        \nextlevel[6]
+        \mess{$\enc{\enc{eID, g_a}{\key{AB}}}{\key{AS}}$}{alice}{server}
+        \nextlevel
+        \mess{$\enc{\enc{eID, g_a}{\key{AB}}}{\key{BS}}$}{server}{bob}
+        \nextlevel
 
-\action*{\parbox{4cm}{\centering
-$b \in \group{p}$\\
-$g_b := \modexp{g}{b}{p}$\\
-$\newkey{AB} := \modexp{g_a}{b}{p}$
-}}{bob}
+        \action*{\parbox{4cm}{\centering
+                $b \in \group{p}$\\
+                $g_b := \modexp{g}{b}{p}$\\
+                $\newkey{AB} := \modexp{g_a}{b}{p}$
+            }}{bob}
 
-\nextlevel[6]
-\mess{$\enc{\enc{eID, g_b, \sha{1}{\newkey{AB}}}{\key{AB}}}{\key{BS}}$}{bob}{server}
-\nextlevel
-\mess{$\enc{\enc{eID, g_b, \sha{1}{\newkey{AB}}}{\key{AB}}}{\key{AS}}$}{server}{alice}
-\nextlevel
+        \nextlevel[6]
+        \mess{$\enc{\enc{eID, g_b, \sha{1}{\newkey{AB}}}{\key{AB}}}{\key{BS}}$}{bob}{server}
+        \nextlevel
+        \mess{$\enc{\enc{eID, g_b, \sha{1}{\newkey{AB}}}{\key{AB}}}{\key{AS}}$}{server}{alice}
+        \nextlevel
 
-\action*{\parbox{4cm}{\centering
-$\newkey{AB}:= \modexp{g_b}{a}{p}$
-}}{alice}
+        \action*{\parbox{4cm}{\centering
+                $\newkey{AB}:= \modexp{g_b}{a}{p}$
+            }}{alice}
 
-\nextlevel[4]
-\mess{$\enc{\enc{eID, \sha{1}{\newkey{AB}}}{\key{AB}}}{\key{AS}}$}{alice}{server}
-\nextlevel
-\mess{$\enc{\enc{eID, \sha{1}{\newkey{AB}}}{\key{AB}}}{\key{BS}}$}{server}{bob}
+        \nextlevel[4]
+        \mess{$\enc{\enc{eID, \sha{1}{\newkey{AB}}}{\key{AB}}}{\key{AS}}$}{alice}{server}
+        \nextlevel
+        \mess{$\enc{\enc{eID, \sha{1}{\newkey{AB}}}{\key{AB}}}{\key{BS}}$}{server}{bob}
 
-\end{msc}
+    \end{msc}
 
-\centering
-\caption{MTProto2.0 Rekeying protocol}
-\label{fig:rekeying-protocol}
+    \centering
+    \caption{MTProto2.0 Rekeying protocol}
+    \label{fig:rekeying-protocol}
 \end{figure}
 
 This protocol is used to enable Perfect Forward Secrecy in secret chats. Clients compliant with the protocol specification are supposed to initiate re-keying once a secret chat key has been used to encrypt and decrypt more than 100 messages, or it has been in use for at least a week (and was used at least once). Any client participating in a secret chat can start a run of the rekeying protocol.
