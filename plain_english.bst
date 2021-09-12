@@ -1046,10 +1046,9 @@ FUNCTION {presort}
   'sort.key$ :=
 }
 
-%% % avoid sort
-%% ITERATE {presort}
-%% 
-%% SORT
+ITERATE {presort}
+
+SORT
 
 STRINGS { longest.label }
 
