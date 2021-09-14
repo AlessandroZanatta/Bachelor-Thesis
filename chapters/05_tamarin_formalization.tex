@@ -1,0 +1,853 @@
+In this section, we will explore the implementation of the MTProto2.0 protocol created in Tamarin prover. The full code is available on GitHub \cite{MTProto2-Tamarin}. Please refer to the README instructions for the code structure and for how to run the code.
+
+This formalization is based on the paper \cite{MTProto2-Proverif} and the Proverif analysis \cite{MTProto2-Proverif-impl} of MTProto2.0 by \MMNV{}.
+
+We will proceed to analyze the implementation of every single protocol and schema described in \cref{sec:mtproto2-informal}.
+
+\section{Authorization protocol}
+\label{sec:auth-prot-formalization}
+\subsection{Exchanges formalization}
+Let us describe, round by round, how the protocol was formalized. See \cref{fig:formalization-authorization-protocol} for the updated schematic of the protocol.
+
+%% Authorization protocol %%
+\begin{figure}[!t]
+  \setlength{\instdist}{4cm}
+  \setmscoptions
+  \begin{msc}{}
+    \setmscscale{.8}
+
+    \declinst{client}{}{Client}
+    \declinst{server}{}{Server}
+
+    \action*{Generates nonces $n_{c}, n_{k}$}{client}
+    \action*{\parbox{4.5cm}{\centering
+        Knows keys $\mbox{sk}^{(1)}, \dots, \mbox{sk}^{(n)}$\\
+        Generates $n_s$
+      }}{server}
+    \nextlevel[4]
+
+    \mess{$n_{c}$}{client}{server}
+    \nextlevel[2]
+    \mess{$n_{c}, n_{s}, \mbox{fp}^{(x)}$}{server}{client}
+
+    \nextlevel
+    \action*{\parbox{4cm}{\centering
+        Gets $\mbox{pk}^{(x)}$ using $\mbox{fp}^{(x)}$\\
+        $C_1 := n_c, n_s, n_k$
+      }}{client}
+
+    \nextlevel[5]
+    \mess{$n_c, n_s, \mbox{fp}^{(x)}, \enc{C_1}{\mbox{pk}^{(i)}}$}{client}{server}
+    \nextlevel
+
+    \action*{$\left(k, iv\right) := \func{genKey}{n_s, n_k}$}{client}
+    \action*{\parbox{4.5cm}{\centering
+        Generates $s$\\
+        $g_s := g^s$\\
+        $key, iv := \func{genKey}{n_s, n_k}$\\
+        $S_1 := n_c, n_s, g_s$
+      }}{server}
+
+    \nextlevel[6]
+    \mess{$n_c, n_s, \enc{S_1}{key, iv}$}{server}{client}
+    \nextlevel
+
+    \action*{\parbox{4.5cm}{\centering
+        Generates $c$\\
+        $g_c := g^c$\\
+        $\key{CS} := g_s^c$\\
+        $C_2 := n_c, n_s, g_c$
+      }}{client}
+    \nextlevel[7]
+
+    \mess{$n_c, n_s, \enc{C_2}{k, iv}$}{client}{server}
+    \nextlevel
+
+    \action*{\parbox{4.5cm}{\centering
+        $\key{CS} := g_c^s$
+      }}{server}
+    \nextlevel[3]
+
+    \mess{$n_c, n_s, \hash{n_k, \key{CS}}$}{server}{client}
+  \end{msc}
+  \centering
+  \caption{MTProto2.0 Authorization protocol (simplified)}
+  \label{fig:formalization-authorization-protocol}
+\end{figure}
+
+\lstset{language=tamarin}
+
+\paragraph{Round 1}
+Client nonces (both $n_c$ and $n_k$) are generated as fresh terms.
+\DiHe{} parameters ($p$ and $g$) are not modeled: instead, we use a single public constant \lstinline{'g'} that represents the generator. In Tamarin, this is needed to avoid having lots of partial deconstructions, a problem that causes an explosion in terms of complexity that usually leads to non-termination. As this public constant is known to everyone (including the attacker), there is no need to send it to the client in \nth{4} message. This simplification makes even more sense if we consider that MTProto2.0 uses only six values for the generator $g$ ($2, 3, 4, 5, 6, 7$).
+
+Moreover, the proof-of-work is not included as we are dealing with the protocol in a symbolic model. Finally, in our formalization, we assume that the client is able to get the public key of the server from its fingerprint. In Telegram, these keys are usually embedded in the application itself, resulting in the possibility of tampering \cite{MTProto2-Proverif}. Keypairs are generated using the following rule:
+
+\begin{lstlisting}
+rule RegisterPublicKey:
+  let
+    pkey        = pk(~skey)
+    fingerprint = fpk(pkey)
+  in
+    [ Fr(~skey) ]
+  -->
+    [ !PrivateKey($X, ~skey), !PublicKey($X, pkey, fingerprint), Out(pkey) ]
+\end{lstlisting}
+
+In particular, the server decides which public key to use beforehand. Hence, a single key fingerprint is sent to the client. As the attacker cannot add its keys, this should not matter.
+
+\paragraph{Round 2} Another simplification is seen in the \nth{3} message: as encryption is not malleable in the symbolic model, there is no need to introduce the hash of the plaintext message along with the message itself. Notice that this hash was used as a Message Authentication Code (MAC) to check data integrity after decryption. This applies to every message from now on. Public key encryption is defined using the built-in \lstinline{asymmetric-encryption} equational theory.
+
+Time is not modeled, following from the formalization in Proverif, and the generic key derivation function $\kdf{}$ has been renamed to $\func{genKey}{}$. Lastly, a public constant \lstinline{'StoC'} (\lstinline{'CtoS'}) has been used to mark the message from the client to the server (from the server to the client) that contains the server (client) \DiHe{} half key. This is needed to avoid adding an incorrect reflection attack in which the server receives the message he has previously sent. In reality, the encryption actually contains some data that allows matching messages. Symmetric encryption is modeled using the built-in \lstinline{symmetric-encryption} equational theory.
+
+\lstset{language=tamarin}
+In the implementation, we also make substantial usage of pattern matching. Besides, using pattern matching is encouraged by Tamarin's manual as it usually decreases partial deconstructions. We have made use of it to ensure that half keys of client and server are actually in the form of \lstinline{'g'^~x}. This trick improves verification times by a lot, while it leaves the \mitm{} attack still possible\footnote{The attacker only needs to use its own ephemeral key and send the corresponding half key.}. We will use this formalization for every \DiHe{} exchange, including the one used in the \schat{} and rekeying protocols.
+
+\paragraph{Round 3} No simplification is needed for the last round, except for removing the $retryID$, meaning that we assume that the exchange is always successful. Notice that this is consistent with the MTProto2.0 specification: the client needs to retry to send his half key only when the server finds a duplicated key hash, but in our model this never happens as client and server use fresh values as \DiHe{} ephemeral keys.
+
+\subsection{Additional implementation notes}
+Every encrypted exchange is tagged with a public constant \lstinline{'AUTH_X'} which should result in better efficiency.
+
+The server's nonce in the model might also be fixed, which models a flawed server implementation or a server lacking randomness. The following rules are used to achieve this behavior:
+
+\begin{lstlisting}
+rule GenerateRandomServerNonce:
+    [ Fr(~ns) ]
+  -->
+    [ NS(~ns) ]
+
+rule GenerateFixedServerNonce:
+    []
+  -->
+    [ NS('FIXED_NS') ]
+\end{lstlisting}
+
+The server then, in the multiset rewriting rule premises, uses the \lstinline{NS(ns)} fact.
+
+Finally, many compromise rules are created:
+\begin{itemize}
+  \item Compromise of server long-term key (asymmetric private key)
+  \item Compromise of client secret nonce $n_k$
+  \item Compromise of server ephemeral key (DH exponent)
+  \item Compromise of client ephemeral key (DH exponent)
+  \item Compromise of authorization keys
+\end{itemize}
+
+As compromise rules are very simple and similar to each other, we will only show an example:
+
+\begin{lstlisting}
+/* Reveals the client's DH secret exponent. */
+rule CompromiseAuthProtClientExponent:
+    [ !AuthProtClientEphemeralSecrets(nk, c) ]
+  --[ CompromisedClientExponent(c) ]->
+    [ Out(c) ]
+\end{lstlisting}
+
+Using these compromise rules, we can also check if the protocol is secure in the eCK model \cite{eCK}. The eCK model assumes, in the case of an authenticated key exchange, two parties, each having a long-term and an ephemeral secret. Of these four pieces of information, the eCK model allows revealing any subset that does not contain both long-term and ephemeral secrets.
+In MTProto2.0, the authorization protocol does not respect the eCK model as the client has no long-term secret. Moreover, intuitively, we can already notice that the protocol is not secure in the eCK model: revealing the client ephemeral secret $n_k$ allows the attacker to perform a classic \mitm{} attack on the \DiHe{} exchange \cite{MITM-DH}.
+
+\subsection{Security properties verification}
+Every rule in the protocol execution is labeled with action facts. We then use these to model security properties. Following the Proverif formalization, we have modeled several forms of key agreement, authentication of parties and key secrecy, along with observational equivalence queries on the secret nonce $n_k$ and the authorization key. In the following paragraphs, we are going to examine lemmas and related results in more detail.
+
+\paragraph{Key agreement}
+The following lemma models key agreement:
+\begin{lstlisting}[numbers=left]
+lemma LemmaAuthProtAgreement:
+  "
+    /* Whenever a client and a server negotiate an authorization key */
+    ∀ nc ns nk authKey1 authKey2 #i #j.
+      (
+        ServerAcceptsAuthKey(nc, ns, nk, authKey1) @i ∧
+        ClientAcceptsAuthKey(nc, ns, nk, authKey2) @j ∧
+
+        /* and no secret was leaked */
+        ¬(∃ sk #r.   CompromisedAuthKey(sk) @r) ∧
+        ¬(∃ skey #r. CompromisedPrivateKey(skey) @r) ∧
+        ¬(∃ n #r.    CompromisedNk(n) @r) ∧
+        ¬(∃ c #r.    CompromisedClientExponent(c) @r) ∧
+        ¬(∃ s #r.    CompromisedServerExponent(s) @r)
+      )
+      ==>
+      (
+        /* then the authorization key is the same */
+        ( authKey1 = authKey2 ) ∨
+        
+        /* 
+         * or the server is actually running two different instances
+         * of the protocol with the client
+         */
+        (
+          ∃ #n1 #n2.
+            ServerGeneratesNonce(ns) @n1 ∧
+            ServerGeneratesNonce(ns) @n2 ∧
+            ¬(#n1 = #n2)
+        )
+      )
+  "
+\end{lstlisting}
+
+By commenting any line between 10-14 (inclusive), we can model agreement in the presence of some information leakage.
+Key agreement without leaks holds. It may be interesting to notice that key agreement holds even when both ephemeral keys are revealed as the attacker cannot force the client and the server to compute different keys. Compromising one at a time either server's private key or client nonce allows the attacker to execute a \mitm{} attack on the \DiHe{} exchange.
+
+We can also prove a similar property: if a client and a server end a run of the protocol negotiating the same key in their unrelated sessions, then these sessions actually coincide.
+
+\paragraph{Authentication}
+Client authentication in the protocol does not hold because the client does not authenticate itself and the server is willing to execute the protocol with anybody (including the attacker). This query captures this:
+
+\begin{lstlisting}
+lemma LemmaAuthProtAuthClientToServer:
+  "
+    ∀ nc ns nk authKey #i #j.
+      /* Whenever a client has started a session with nonce nc */
+      ClientStartsSession(nc) @i ∧
+
+      /* and the server has sent an ACK for the session <nc, ns> */
+      ServerSendsAck(nc, ns, nk, authKey) @j ∧
+
+      /* and no secret was leaked */          
+      ¬(∃ sk #r.   CompromisedAuthKey(sk) @r) ∧
+      ¬(∃ skey #r. CompromisedPrivateKey(skey) @r) ∧
+      ¬(∃ n #r.    CompromisedNk(n) @r) ∧
+      ¬(∃ c #r.    CompromisedClientExponent(c) @r) ∧
+      ¬(∃ s #r.    CompromisedServerExponent(s) @r)
+      ==>
+      (
+        /* then a client has shared an authKey with the server */
+        (
+          ∃ #k.
+          ClientAcceptsAuthKey(nc, ns, nk, authKey) @k
+        ) ∨
+
+        /* 
+         * or the server is actually running two different instances
+         * of the protocol with the client
+         */
+        (
+          ∃ #k #l.
+            ServerGeneratesNonce(ns) @k ∧
+            ServerGeneratesNonce(ns) @l ∧
+            ¬(#k = #l)
+        )
+      )
+  "
+\end{lstlisting}
+
+However, we can prove the server knows that the client that negotiated the authorization key is the same that sent the third message. For the sake of brevity, we will not report the related lemma.
+
+As anyone can create an authorization key with the server, this lack of authentication is not an issue. Instead, server authentication is fundamental and it is captured by the following lemma:
+\begin{lstlisting}[numbers=left]
+  lemma LemmaAuthProtAuthServerToClient:
+    "
+      ∀ nc ns nk authKey #i1.
+        /* Whenever a client receives an ACK from the server */
+        ClientReceivesAck(nc, ns, nk, authKey) @i1 ∧
+        
+        /* and no secret was leaked */
+        ¬(∃ sk #r.   CompromisedAuthKey(sk) @r) ∧
+        ¬(∃ skey #r. CompromisedPrivateKey(skey) @r) ∧
+        ¬(∃ n #r.    CompromisedNk(n) @r) ∧
+        ¬(∃ c #r.    CompromisedClientExponent(c) @r) ∧
+        ¬(∃ s #r.    CompromisedServerExponent(s) @r)
+        ==>
+        (
+          /* then there is a session matching it on the server */
+          ( 
+            ∃ #j.
+            ServerAcceptsAuthKey(nc, ns, nk, authKey) @j ∧
+            (∀ #i2. ClientReceivesAck(nc, ns, nk, authKey) @i2 ==> #i1 = #i2)
+          ) ∨
+
+          /* or the server has reused the same nonce */
+          (
+            ∃ #j1 #j2.
+              ServerGeneratesNonce(ns) @j1 ∧
+              ServerGeneratesNonce(ns) @j2 ∧
+              ¬(#j1 = #j2)
+          )
+        )
+    "
+\end{lstlisting}
+
+This lemma holds, meaning that the server is authenticated to the client. Notice that line 19 models injectivity.
+
+\paragraph{Key secrecy}
+Another fundamental property of the authentication protocol is key secrecy: when a client and a server negotiate a key, they must be sure that the key is known only to them. This property is formalized with the following lemma:
+\begin{lstlisting}
+lemma LemmaAuthProtKeySecrecy:
+  "
+    /* Whenever client and server negotiated a key */
+    ∀ nc ns nk authKey #i #j #k.
+      ClientAcceptsAuthKey(nc, ns, nk, authKey) @i ∧
+      ServerAcceptsAuthKey(nc, nk, nk, authKey) @j ∧
+
+      /* and the attacker knows it */
+      K(authKey) @k
+      ==>
+      /* then some secret was leaked */
+      (
+        (∃ #r.      CompromisedAuthKey(authKey) @r) ∨
+        (∃ skey #r. CompromisedPrivateKey(skey) @r) ∨
+        (∃ #r.      CompromisedNk(nk) @r) ∨
+        (∃ c #r.    CompromisedClientExponent(c) @r) ∨
+        (∃ s #r.    CompromisedServerExponent(s) @r)
+      )
+
+  "
+\end{lstlisting}
+
+\paragraph{Observational equivalence}
+Attempts to prove observational equivalence for client's secret nonce $n_k$ and authorization key, unfortunately, do not terminate. Notice that observational equivalence is often extremely resource-consuming.
+
+Observational equivalence in Tamarin is expressed using the \lstinline{diff/2} operator, which duplicates every rule, one for the left-hand side and one for the right-hand side of the operator and tries to find a difference between the two traces.
+
+In the formalization, we created the two following rules:
+
+\begin{lstlisting}
+/*
+ * The secret nonce nk generated by the client is indistinguishable 
+ * from a fresh value.
+ */
+rule RuleAuthProtNkEquivalence:
+    [
+      !AuthProtClientEphemeralSecrets(nk, b),
+      Fr(~n)
+    ]
+  -->
+    [ Out(diff(nk, ~n)) ]
+
+/*
+ * A negotiated authorization key authKey is indistinguishable from a 
+ * fresh value.
+ */
+rule LemmaAuthProtAuthKeyEquivalence:
+    [
+      !AuthKeyClient(server, authKey),
+      Fr(~freshAuthKey)
+    ]
+  -->
+    [ Out(diff(~freshAuthKey, authKey)) ]
+\end{lstlisting}
+
+
+
+
+
+\section{\Cchat{} encryption schema}
+\label{sec:cloud-chat-formalization}
+
+\subsection{Encryption formalization}
+\Cchat{} encryption has been simplified to suit the symbolic model better.
+First of all, the key derivation function returns only the key. Notice that, as both key and initialization vector are derived from the same terms, once the adversary is able to compute the key it would be able to compute the IV as well. Hence, it is not modeled as it would only add complexity to the model without bringing any benefit.
+
+A function \lstinline{msgKey/2} is used to create the message key from the message and the authorization key. Then, the message key is used to create the encryption key for the message, together with the authorization key, using the \lstinline{genKey/2} primitive. The plaintext message is encrypted using the built-in \lstinline{symmetric-encryption}. The final message that is sent on the channel is composed of the fingerprint of the authorization key (using \lstinline{keyID/1}), the message key and the encrypted message. Notice that functions \lstinline{msgKey/2}, \lstinline{genKey/2} and \lstinline{keyID/1} have no associated equation (i.e. are considered perfect hashing functions).
+
+Four different rules have been created: two are used to exchange messages from client to server and the other two for messages from the server to the client. This approach allows us to test for secrecy in both directions. Here is an example of the rule used to model a client to server message:
+
+\begin{lstlisting}
+  rule ClientCloudChatSendsMessage:
+    let
+      msg = <'CC_CtoS', ~sessionID, ~m>
+      mk  = msgKey(msg, authKey)
+      key = genKey(mk, authKey)
+      c   = <keyID(authKey), mk, senc(msg, key)>
+    in
+      [
+        !AuthKeyClient($Server, authKey),
+        Fr(~sessionID),
+        Fr(~m)
+      ]
+    --[ ClientSendsCloudMessage(~sessionID, ~m, authKey) ]->
+      [ Out(c) ]
+\end{lstlisting}
+
+Notice on line 3 that we use a public constant \lstinline{'CC_CtoS'} to differentiate client to server from server to client messages.
+
+\subsection{Security properties verification}
+
+\paragraph{Secrecy and forward secrecy} The \cchat{} encryption schema is essentially employed to obtain secrecy on messages exchanged between a client and a server after they have negotiated an authorization key.
+The following lemma proves secrecy from client to server. A very similar one is used to verify secrecy of messages from server to client.
+
+\begin{lstlisting}
+lemma LemmaCloudChatSecrecyClientToServer:
+  "
+    ∀ sid msg authKey #i #j #r.
+      (
+        /* Whenever a client sends a cloud message to the server */
+        ClientSendsCloudMessage(sid, msg, authKey) @i ∧
+
+        /* and the server receives it */
+        ServerReceivesCloudMessage(sid, msg, authKey) @j ∧
+
+        /* and the attacker knows it */
+        K(msg) @r
+      )
+      ==>
+      (
+        /* then some secret was compromised */
+        (∃ #r.      CompromisedAuthKey(authKey) @r) ∨
+        (∃ skey #r. CompromisedPrivateKey(skey) @r) ∨
+        (∃ n #r.    CompromisedNk(n) @r) ∨
+        ((∃ c #r.   CompromisedClientExponent(c) @r) ∧
+        (∃ s #r.    CompromisedServerExponent(s) @r))
+      )
+  "
+\end{lstlisting}
+
+This lemma means that messages are secure, unless:
+\begin{itemize}
+  \item The private key of the server is compromised;
+  \item The secret nonce $n_k$ of the client is compromised;
+  \item \DiHe{} exponents of client and server are compromised.
+\end{itemize}
+
+As seen in \cref{sec:auth-prot-formalization}, compromising any of these secrets leads to a lack of secrecy on the key. Additionally, the key itself can be compromised to break \cchats{} secrecy.
+
+As the lemma above is also strict (i.e. removing any event leads to an attack trace), this also means that \pfs{} does not hold in \cchats{} as an attacker that is able to compromise the authorization key can decrypt both past and future messages (as well as forging them, effectively impersonating the client to the server).
+
+
+
+
+
+
+\section{\Schat{}}
+\label{sec:secret-chat-formalization}
+A \schat{} can be created after clients have both shared an authorization key with the server. To create a shared secret (the \textit{\schat{} key}) between two clients, MTProto2.0 uses, as already seen in \cref{sec:secret-chat}, a \DiHe{} key exchange in which the Telegram server acts as a forwarder.
+
+As we have already analyzed the security of the authorization protocol and of the \cchat{} encryption in \cref{sec:auth-prot-formalization,sec:cloud-chat-formalization}, in the formalization we do not encrypt messages with the authorization key, nor we do use the server as a forwarder. Instead, we execute the \schat{} protocol exchanges as if they were plaintext: this allows the attacker to act as the server (i.e. having knowledge of both authorization key and forwarding messages) and to manipulate messages \cite{MTProto2-Proverif}. Additionally, removing this layer of encryption allows simplifying the protocol model, formulating stronger security properties and obtaining higher efficiency. For these reasons, we do not model any rule that creates dummy authorization keys nor execute the authorization protocol to obtain them.
+
+\subsection{Exchanges formalization}
+%% Secret-chat protocol %%
+\begin{figure}[!t]
+  \setlength{\instdist}{3cm}
+  \setmscoptions
+  \begin{msc}{}
+    \setmscscale{.8}
+
+    \declinst{alice}{}{Alice}
+    \declinst{bob}{}{Bob}
+
+    \action*{\parbox{3.5cm}{\centering
+        Knows $\key{AS}$\\
+        Knows $g$\\
+        Generates $sID, a$\\
+        $g_a := g^a$
+      }}{alice}
+    \action*{Knows $\key{BS}$}{bob}
+
+    \nextlevel[7]
+    \mess{$sID, A, B, g_a$}{alice}{bob}
+    \nextlevel
+
+    \action*{\parbox{3.5cm}{\centering
+        Knows $g$\\
+        Generates $b$\\
+        $g_b := g^b$\\
+        $\key{AB} := g_a^b$
+      }}{bob}
+
+    \nextlevel[6]
+    \mess{$sID, A, B, g_b, \func{fps}{k_{AB}}$}{bob}{alice}
+    \nextlevel
+
+    \action*{\parbox{4cm}{\centering
+        $\key{AB} := g_b^a$\\
+        Generates $msg$
+      }}{alice}
+
+    \nextlevel[3]
+    \condition{Out-of-band $\key{AB}$ fingerprint comparison}{alice,bob}
+    \nextlevel[4]
+    \mess{$\enc{msg}{\key{AB}}$}{alice}{bob}
+
+  \end{msc}
+
+  \centering
+  \caption{MTProto2.0 \Schat{} protocol formalization}
+  \label{fig:secret-chat-protocol-formalization}
+\end{figure}
+
+Following the Proverif formalization, we explicitly name clients and allow the attacker to choose their roles (i.e. who the initiator is, whom the initiator talks to, who the responder is). We apply restriction rules to ensure that the initiator is always honest: % TODO: I've never said what restriction rules were... this maybe needs to be added?
+
+\begin{lstlisting}
+restriction RestrictionChoosePrincipal:
+  "
+    ∀ X Y Z #i.
+      ChoosePrincipal(X, Y, Z) @i ==> ((X = Y) ∨ (X = Z))
+  "
+\end{lstlisting}
+
+However, the responder may as well be a dishonest party. Having named clients explicitly, we can prove additional authentication security properties.
+Finally, we model the QR-code comparison with the following rules:
+
+\begin{lstlisting}
+rule PerformOutOfBandKeyComparison:
+    [ 
+      !QR(aID, aUser, bUser, sessionKey),
+      !QR(bID, bUser, aUser, sessionKey)
+    ]
+  --[ 
+      /* Rule out the possibility of sessions of a client with itself */
+      NotEq(aUser, bUser),
+
+      OutOfBandKeyComparisonSucceeded(aID, aUser, bUser, sessionKey),
+      OutOfBandKeyComparisonSucceeded(bID, bUser, aUser, sessionKey)
+    ]->
+    [
+      !QROK(aID, aUser, bUser, sessionKey),
+      !QROK(aID, bUser, aUser, sessionKey)
+    ]
+
+rule SkipOutOfBandKeyComparison:
+    [ !QR(aID, aUser, bUser, sessionKey) ]
+  --[ OutOfBandKeyComparisonSkipped(aID, aUser, sessionKey)]->
+    [ !QROK(aID, aUser, bUser, sessionKey) ]
+
+restriction RestrictionNotEqual:
+  "∀ x y #i. NotEq(x, y) @i ==> ¬(x = y)"
+\end{lstlisting}
+
+The persistent fact \lstinline{!QR} is created by each party after they have computed the \schat{} key. The above rules model both the correct and incorrect behavior of clients, allowing to specify properties in which a specific behavior is taken. The correct behavior is the one express by the \lstinline{PerformOutOfBandKeyComparison} rule, where the client implicitly checks that the \lstinline{sessionKey} he computed is the same as the other party. The incorrect behavior in rule \lstinline{SkipOutOfBandKeyComparison} models a client that does not match the key fingerprint: as this is the only way of authenticating parties to each other, skipping the comparison may result in a \DiHe{} \mitm{} attack.
+
+Additionally, two rules have been added to allow message sending and receiving:
+
+\begin{lstlisting}
+rule SecretChatSend:
+  let
+    mk  = msgKey(~m, sessionKey)
+    key = genKey(mk, sessionKey)
+    c   = <keyID(sessionKey), mk, senc(~m, key)>
+  in
+    [ 
+      !SecretChatClient(X, iUser, rUser, xID, chatID, sessionKey, authKey),
+      Fr(~m)
+    ]
+  --[
+      ClientSendsSecretChatMsg(chatID, X, iUser, rUser, sessionKey, ~m)
+    ]->
+    [ Out(c) ]
+
+rule SecretChatReceive:
+  let
+    mk  = msgKey(~m, sessionKey)
+    key = genKey(mk, sessionKey)
+    c   = <keyID(sessionKey), mk, senc(~m, key)>
+  in
+    [
+      !SecretChatClient(X, iUser, rUser, xID, chatID, sessionKey, authKey),
+      In(c)
+    ]
+  --[ ClientReceivesSecretChatMsg(chatID, X, iUser, rUser, sessionKey, ~m) ]->
+    []
+\end{lstlisting}
+
+As already noted in \cref{sec:secret-chat}, the encryption schema for \schat{} messages slightly differs from the \cchat{} one. However, from a symbolic point of view, they are equivalent. Hence, we model the \schat{} encryption with the same steps described in \cref{sec:cloud-chat-formalization}.
+
+\Cref{fig:secret-chat-protocol-formalization} shows the \schat{} protocol, with the above simplification.
+
+\subsection{Security properties verification}
+
+Two main properties should be satisfied by the \schat{} protocol: secrecy and authentication.
+
+
+\paragraph{Secrecy} This is, of course, one of the most important properties for an end-to-end chat. MTProto2.0 guarantees secrecy under the assumption that clients compare the \schat{} key fingerprint out-of-band. This mechanism is also used, for example, by Signal \cite{SignalProtocol}. Formally, Tamarin is able to prove the following secrecy lemma:
+
+\begin{lstlisting}
+lemma LemmaSecretChatSecrecy:
+  "
+    /* Whenever the client sends a secret chat message msg */
+    ∀ chatID X iUser rUser sessionKey msg #i #j.
+      ClientSendsSecretChatMsg(chatID, X, iUser, rUser, sessionKey, msg) @i ∧
+      
+      /* but the attacker knows it */
+      K(msg) @j
+      ==>
+      (
+        /* then clients skipped the QR validation */
+        ∃ a #r. OutOfBandKeyComparisonSkipped(a, X, sessionKey) @r
+      )
+  "
+\end{lstlisting}
+
+In other words, unless clients skipped the key fingerprint comparison, the exchanged messages are secret. Let us stress the fact that this result does not depend on the secrecy of the authorization key. Hence, if clients compare the fingerprint correctly, end-to-end encryption holds even against a compromised server.
+
+\paragraph{Authentication}
+Many variants of authentication have been proven. The most generic one is the following:
+
+\begin{lstlisting}
+  lemma LemmaSecretChatAuthentication1:
+  "
+    /* Whenever a client received a secret chat message */
+    ∀ chatID1 X iUser rUser msg sessionKey #i.
+      ClientReceivesSecretChatMsg(chatID1, X, iUser, rUser, sessionKey, msg) @i
+      ==>
+      (
+        /* then it was sent by another (honest) client */
+        (∃ Y chatID2 #r. 
+          ClientSendsSecretChatMsg(chatID2, Y, iUser, rUser, sessionKey, msg) @r) ∨
+        (∃ Y chatID2 #r. 
+          ClientSendsSecretChatMsg(chatID2, Y, rUser, iUser, sessionKey, msg) @r) ∨
+
+        /* or clients involved have skipped the QR validation */
+        (
+          ∃ Y xID yID #r1 #r2. 
+            OutOfBandKeyComparisonSkipped(xID, X, sessionKey) @r1 ∧
+            OutOfBandKeyComparisonSkipped(yID, Y, sessionKey) @r2
+        )
+      )
+  "
+\end{lstlisting}
+
+Notice that we cannot match sessions (i.e. $chatID1 = chatID2$) as the server can forward messages modifying the session identifier. As also pointed to by \MMNV{} \cite{MTProto2-Proverif}, this does not seem to pose any security risks.
+
+As reported earlier, skipping QR comparison results in a classic \DiHe{} \mitm{} attack.
+
+\paragraph{Observational equivalence} We have tried to model several observational equivalence properties, such as:
+\begin{itemize}
+  \item Indistinguishability of a client's exponent from a random value. This should not hold as the attacker can compute the DH key (using the exponent and the other half of the key) and compare fingerprints;
+  \item Indistinguishability of a \schat{} key and a random value. This should not hold as the attacker can compare the key fingerprint with the \nth{2} message of the protocol;
+  \item Indistinguishability of message exchanged with the \schat{} key and a random value. This should hold as long as the key used to encrypt the message is kept secret.
+\end{itemize}
+
+Again, Tamarin does not terminate when trying to prove these observational equivalences.
+
+
+
+
+\section{Rekeying}
+
+%% Rekeying protocol %%
+\begin{figure}[t]
+  \setmscoptions
+  \setlength{\instdist}{2.5cm}
+  \begin{msc}{}
+    \setmscscale{.8}
+
+    \declinst{alice}{}{Alice}
+    \declinst{bob}{}{Bob}
+
+    \action*{Knows $\key{AB}, g$}{alice}
+    \action*{Knows $\key{AB}, g$}{bob}
+
+    \nextlevel[2]
+    \action*{\parbox{3cm}{\centering
+        Generates $eID, a$\\
+        $g_a := g^a$
+      }}{alice}
+
+    \nextlevel[4]
+    \mess{$\enc{eID, g_a}{\key{AB}}$}{alice}{bob}
+    \nextlevel
+
+    \action*{\parbox{3cm}{\centering
+        Generates $b$\\
+        $g_b := g^b$\\
+        $\newkey{AB} := g_a^b$
+      }}{bob}
+
+    \nextlevel[5]
+    \mess{$\enc{eID, g_b, \func{fps}{\newkey{AB}}}{\key{AB}}$}{bob}{alice}
+    \nextlevel
+
+    \action*{\parbox{3cm}{\centering
+        $\newkey{AB}:= g_b^a$
+        Generates $msg$
+      }}{alice}
+
+    \nextlevel[4]
+    \mess{$\enc{eID, \func{fps}{\newkey{AB}}}{\key{AB}}$}{alice}{bob}
+    \nextlevel[2]
+    \mess{$\enc{msg}{\newkey{AB}}$}{alice}{bob}
+
+  \end{msc}
+
+  \centering
+  \caption{MTProto2.0 Rekeying protocol formalization}
+  \label{fig:rekeying-protocol-formalization}
+\end{figure}
+
+Finally, let us describe the rekeying protocol formalization, which allows \pfs{} on \schats{}.
+
+\subsection{Exchanges formalization}
+The formalization of the rekeying protocol is very similar to the formalization of the \schat{} protocol: we do not model the outer layer of encryption from client to server. The reasoning and implications are the same (see \cref{sec:secret-chat-formalization}).
+
+The significant difference is that this time the \DiHe{} exchange is end-to-end encrypted using the \schat{} key exchanged (only) between clients. A schematic representation of the protocol's formalization is given in \cref{fig:rekeying-protocol-formalization}.
+
+For efficiency and termination reasons, in our formalization the attacker can choose only the initiator's responder. Both initiator and responder are fixed. \Schat{} keys are generated using the following rules:
+
+\begin{lstlisting}
+rule GenerateSecretChatKey:
+  let
+    X1 = 'Alice'
+    X2 = 'Bob'
+    sessionKey = 'g' ^ ~i ^ ~r
+  in
+    [
+      Fr(~i),
+      Fr(~r),
+      Fr(~chatID)
+    ]
+  -->
+    [ 
+      !SecretChatClient(X1, X1, X2, ~i, ~chatID, sessionKey),
+      !SecretChatClient(X2, X1, X2, ~r, ~chatID, sessionKey)
+    ]
+
+rule AttackerGeneratesSecretChatKey:
+  let
+    sessionKeyAlice = 'g' ^ ~e1 ^ ~e2
+    sessionKeyBob = 'g' ^ ~e3 ^ ~e4
+  in
+    [ 
+      Fr(~e1), Fr(~e2), Fr(~e3), Fr(~e4),
+      Fr(~chatIDAlice), Fr(~chatIDBob)
+    ]
+  --[ AttackerRegisteredKey(sessionKeyAlice), AttackerRegisteredKey(sessionKeyBob) ]->
+    [
+      !SecretChatClient('Alice', 'Alice', 'Eve', ~e1, ~chatIDAlice, sessionKeyAlice),
+      !SecretChatClient('Eve', 'Alice', 'Eve', ~e2, ~chatIDAlice, sessionKeyAlice),
+      !SecretChatClient('Bob', 'Eve', 'Bob', ~e3, ~chatIDBob, sessionKeyBob),
+      !SecretChatClient('Eve', 'Eve', 'Bob', ~e4, ~chatIDBob, sessionKeyBob),
+      Out(<sessionKeyAlice, sessionKeyBob>)
+    ]
+\end{lstlisting}
+
+The first models the generation for honest users, while the second allows the attacker to execute the protocol with honest users by creating a \schat{} with them and sharing the key with the attacker by outputting it. Notice that these rules implicitly assume the correctness of the \schat{} protocol, which we have proven in \cref{sec:secret-chat-formalization}.
+
+A very important modelling decision has been taken, in order to achieve termination of lemmas: both initiator's and responder's first rule have a restriction \lstinline{OnlyTwice(x)}, where \lstinline{x} is \lstinline{'Initiator'} for initiator and \lstinline{'Responder'} for responder. The restriction is defined as follows:
+
+\begin{lstlisting}
+restriction RestrictionOnlyTwice:
+  "
+    ∀ x #i #j #k. 
+      OnlyTwice(x) @i ∧
+      OnlyTwice(x) @j ∧
+      OnlyTwice(x) @k 
+      ==>
+      (
+        #i = #j ∨
+        #i = #k ∨
+        #j = #k
+      )
+  "
+\end{lstlisting}
+
+This restriction allows only two instances of the \lstinline{OnlyTwice} fact (with the same argument) on the trace.
+Nonetheless, this is the best solution that has been found to the non-termination problems observed during the modeling of this protocol\footnote{In essence, Tamarin was trying to gain knowledge of secret (i.e. exponents) or encrypted terms by executing the rekeying protocol many times with different \schat{} keys. This behavior appears to lead to non-termination.}. It is of the utmost importance to notice that this restriction may or may not compromise the soundness of results obtained in the verification process as it bounds the number of rekeying executions.
+
+Message encryption is modeled as in \schats{} (see \cref{sec:secret-chat-formalization}).
+
+\subsection{Security properties verification}
+We would like to prove three properties: secrecy, \pfs{} and authentication.
+
+\paragraph{Secrecy and \pfs{}}
+
+Even in our scenario, it can be proven by Tamarin that secrecy holds after rekeying. The following lemma formalizes this property:
+
+\begin{lstlisting}
+lemma LemmaRekeyingMessageSecrecy:
+  "
+    /* There is no way two honest clients exchanged a message msg */
+    ¬(∃ s r iUser rUser xID1 xID2 eID1 eID2 newKey msg #i1 #i2 #j.
+      ClientSendsMessageWithNewKey(xID1, s, eID1, iUser, rUser, newKey, msg) @i1 ∧
+      ClientReceivesMessageWithNewKey(xID2, r, eID2, iUser, rUser, newKey, msg) @i2 ∧
+
+      /* and the attacker knows it */
+      K(msg) @j
+    )
+  "
+\end{lstlisting}
+
+\Pfs{} is guaranteed by the periodic rotation of keys described in \cref{sec:rekeying}. We also proved that knowledge of authorization keys does not compromise secrecy.
+
+\paragraph{Authentication}
+
+\begin{figure}[t]
+  \setmscoptions
+  \setlength{\instdist}{2cm}
+  \begin{msc}{}
+    \setmscscale{.8}
+
+    \declinst{alice}{}{Alice}
+    \declinst{eve}{}{Eve}
+    \declinst{bob}{}{Bob}
+
+    \action*{Knows $\key{AE}, g$}{alice}
+    \action*{Knows $\key{AE}, \key{BE}, g$}{eve}
+    \action*{Knows $\key{BE}, g$}{bob}
+
+    \nextlevel[2]
+    \action*{\parbox{3cm}{\centering
+        Generates $eID, a$\\
+        $g_a := g^a$
+      }}{alice}
+
+    \nextlevel[4]
+    \mess{$\enc{eID, g_a}{\key{AE}}$}{alice}{eve}
+    \nextlevel
+    \mess{$\enc{eID, g_a}{\key{BE}}$}{eve}{bob}
+    \nextlevel
+
+    \action*{\parbox{3cm}{\centering
+        Generates $b$\\
+        $g_b := g^b$\\
+        $\newkey{AB} := g_a^b$
+      }}{bob}
+
+    \nextlevel[5]
+    \mess{$\enc{eID, g_b}{\key{BE}}$}{bob}{eve}
+    \nextlevel
+    \mess{$\enc{eID, g_b}{\key{AE}}$}{eve}{alice}
+    \nextlevel
+
+    \action*{$\newkey{AB} := g_b^a$}{alice}
+
+    \nextlevel[3]
+    \mess{$\enc{eID, \func{fps}{\newkey{AB}}}{\key{AE}}$}{alice}{eve}
+    \nextlevel
+    \mess{$\enc{eID, \func{fps}{\newkey{AB}}}{\key{BE}}$}{eve}{bob}
+
+  \end{msc}
+
+  \centering
+  \caption{\Uks{} attack on the rekeying protocol.}
+  \label{fig:UKS}
+\end{figure}
+
+The other fundamental property of this protocol is the authentication of parties. Whenever two clients execute the rekeying protocol (successfully), they should be able to assume that the new key is known to both and only them.
+
+The following lemma is used to verify that whenever two clients exchange the same key in the same session, there are only two (honest) parties involved:
+
+\begin{lstlisting}
+  lemma LemmaRekeyingAuthentication:
+  "
+    /* Whenever two users negotiate the same key in the same session */
+    ∀ exchangeID iUser1 iUser2 rUser1 rUser2 newKey #i #j.
+      InitiatorHasNegotiatedNewKey(exchangeID, iUser1, rUser1, newKey) @i ∧
+      ResponderHasNegotiatedNewKey(exchangeID, iUser2, rUser2, newKey) @j
+      ==>
+      (
+        /* then there are actually only two users involved */
+        iUser1 = iUser2 ∨
+        iUser1 = rUser2 ∨
+        rUser1 = iUser2 ∨
+        rUser1 = rUser2
+      )
+  "
+\end{lstlisting}
+
+However, Tamarin finds a counterexample for this lemma. Specifically, it finds the same attack described by \MMNV{}: an \textit{unknown key-share} attack.
+
+Let A and E be two honest entities. This type of attack, defined by \SBWAM{} \cite{UKS}, allows a client A to believe it has shared a key with E, while it has instead shared it with B. In this particular case, this attack also compromises two other properties: \textit{implicit key confirmation} and \textit{implicit key authentication} \cite{MTProto2-Proverif}.
+The first property states that client A is assured that the second entity B can compute the key. The latter states that client A is assured that no other entity, apart from B, can learn the value of the key \cite{UKS}.
+
+Now, let us show how the attack unfolds in the following situation: assume there are three clients (A, B and E) and client E has already shared a \schat{} key. The steps of the attack are the following:
+
+\begin{enumerate}
+  \item A starts executing the rekeying protocol with E and E receives A's half key $g_a$;
+  \item E now starts a concurrent execution with B using A's half key $g_a$ and obtains B's half key $g_b$. E may or may not reuse the same session identifier sent by A with B;
+  \item E responds to A using B's half key $g_b$;
+  \item A concludes the protocol run by sending the fingerprint of the new key. E then forwards, with the correct key, the fingerprint.
+\end{enumerate}
+
+As a result, client E neither uniquely possesses the key nor can compute it. \Cref{fig:UKS} shows a graphical representation of the attack.
+
