@@ -1,0 +1,318 @@
+
+In this chapter, we will describe the usage of Proverif and Tamarin prover from a user perspective. We do so by showing the modeling process of the protocol shown in \cref{enum:protocol}. Again, we leave the attacker the task of starting the protocol, that is, the attacker will send the public key of the responder to A.
+
+
+\lstset{language=proverif}
+\section{Proverif}
+
+\subsection{Cryptographic primitives}
+Proverif does not offer any built-in equational theory. Every time we want to use a cryptographic primitive, we need to define it ourselves.
+
+In the example protocol, we will need symmetric and asymmetric encryption and revealing signing. First of all, as Proverif uses a typed language, we can create some types for the keys. We will use the built-in type \lstinline{bitstring} for other terms.
+
+\begin{lstlisting}
+type Key.
+type PublicKey.
+type PrivateKey.
+\end{lstlisting}
+
+Then, to define constructors, we simply define their signatures using types:
+
+\begin{lstlisting}
+fun pk(PrivateKey): PublicKey.              (* Public key derivation from private key *)
+fun aenc(bitstring, PublicKey): bitstring.  (* Asymmetric encryption *)
+fun senc(bitstring, Key): bitstring.        (* Symmetric encryption *)
+fun sign(bitstring, PrivateKey): bitstring. (* Signing *)
+\end{lstlisting}
+
+Finally, we define destructors:
+\begin{lstlisting}
+(* Asymmetric decryption *)
+reduc forall m: bitstring, sk: PrivateKey;
+    adec(aenc(m, pk(sk)), sk) = m.
+  
+(* Symmetric decryption *)
+reduc forall m: bitstring, k: Key;
+    sdec(senc(m, k), k) = m.
+
+(* Signature verification *)
+reduc forall m: bitstring, sk: PrivateKey;
+    verify(sign(m, sk), m, pk(sk)) = true.
+
+(* Signature message revealing *)
+reduc forall m: bitstring, sk: PrivateKey;
+    getmess(sign(m, sk)) = m.
+\end{lstlisting}
+
+The syntax $\mathbf{reduc\ forall}\ x_1: t_1, \ldots, x_n: t_n;\ \func{g}{M_1, \ldots, M_k} = M.$ is used to define a rewrite rule (with term types $t_i$). This declaration can be expended to define \textit{a set} of rewrite rules or even \textit{a sequence}. When a destructor fails, the process which executed it blocks. As already seen, every term on the right-hand side must appear on the left-hand side.
+
+Proverif additionally allows the creation of type converters, which allow to cast a term from one type to another. We defined two type converters for the \lstinline{Key} type:
+
+\begin{lstlisting}
+fun key2bit(Key): bitstring [typeConverter].
+fun bit2key(bitstring): Key [typeConverter].
+\end{lstlisting}
+
+Type converters are function declaration with the additional \lstinline{[typeConverter]} annotation.
+
+\subsection{Events and channels}
+We have seen in \cref{subsec:pic-apic} that the \apic{} is a language that models a system communicating on channels. In Proverif, we can create channels (both public or private).
+
+\begin{lstlisting}
+channel io. (* Public channel used for every exchange *)
+\end{lstlisting}
+
+We also need to define events, which are used to define security properties. To declare an event, we need to define its name and its parameters types.
+
+\begin{lstlisting}
+event AReceivedMessage(bitstring, Key).
+event BSentMessage(bitstring, Key).
+\end{lstlisting}
+
+\subsection{Protocol model}
+To define parties, we use the \lstinline{let} construct, which allows creating a parameterized process macro.
+
+Let us start by defining the process executed by the initiator:
+
+\begin{lstlisting}
+let A(skA: PrivateKey) =
+  in(io, pkX: PublicKey);
+
+  new k: Key;
+  let bit_k = key2bit(k) in
+  out(io, aenc(sign(bit_k, skA), pkX));
+  
+  in(io, c: bitstring);
+  let m = sdec(c, k) in
+      event AReceivedMessage(m, k);
+  0.
+\end{lstlisting}
+
+On line 1, we define the macro \lstinline{A} with a parameter \lstinline{skA} (of type \lstinline{PrivateKey}).
+Then, we receive the public key of the other party from the public channel. Notice that the \lstinline{in(...)} operation is blocking (i.e. the process stops until it receives a message).
+On lines 4-6, we generate a new key, convert it to a bitstring, and apply cryptographic functions before sending the message.
+Finally, on lines 8-10, we receive a message, and then we apply destructors using the \lstinline{let-in} construct. If decryption is correct, we add the event \lstinline{AReceivedMessage} to the trace.
+
+Then, we define the responder process similarly:
+
+\begin{lstlisting}
+let B(skB: PrivateKey, pkA: PublicKey) =
+  in(io, c: bitstring);
+  let signature = adec(c, skB) in
+
+  let bit_k = getmess(signature) in
+  if verify(signature, bit_k, pkA) then
+      let k = bit2key(bit_k) in
+      new m: bitstring;
+      out(io, senc(m, k));
+      event BSentMessage(m, k);
+  0.
+\end{lstlisting}
+
+On line 6, we use a conditional statement to check if the signature is correct. If it is, we create a new message, send it encrypted with key \lstinline{k} and add the \lstinline{BSentMessage} event to the trace.
+
+Finally, we define the \lstinline{process}, which defines which processes are executed. As we have parameterized our client processes, we additionally create their keys and pre-share them through arguments.
+
+\begin{lstlisting}
+process
+  new skA: PrivateKey; let pkA = pk(skA) in out(io, pkA);
+  new skB: PrivateKey; let pkB = pk(skB) in out(io, pkB);
+  ((!A(skA)) | (!B(skB, pkA)))
+\end{lstlisting}
+
+Here we are executing an unbounded number of processes of both A and B in parallel.
+Notice that we output the public key of each principal to make sure the attacker has access to it.
+
+\subsection{Security properties}
+We define security properties as \Horncs{}. For example, we can create a query for secrecy of the message in the following manner:
+
+\begin{lstlisting}
+query m: bitstring, k: Key;
+  event(AReceivedMessage(m, k)) && event(BSentMessage(m, k)) && attacker(m) ==> false.
+\end{lstlisting}
+
+The \lstinline{query} syntax requires to define terms type with the same syntax used before. In queries, we can use conjunctions (\lstinline{&&}), disjunctions (\lstinline{||}) implications (\lstinline{==>}) and negation (\lstinline{not}).
+
+Proverif allows the usage of many other constructs when defining queries. For a complete list, please refer to the user manual \cite{ProverifManual}.
+
+\lstset{language=tamarin}
+\section{Tamarin prover}
+
+\subsection{Preamble and cryptographic primitives}
+
+First of all, we need to add the preamble of our Tamarin file. Tamarin files use the \lstinline{.spthy} extension. In the opening, we specify the theory name with \lstinline{theory ExampleProtocol} and import the built-in equational theories we need (\lstinline{builtins: ...}). The protocol is enclosed between a \lstinline{begin} and an \lstinline{end} keyword.
+
+\begin{lstlisting}
+theory ExampleProtocol
+begin
+
+  builtins: asymmetric-encryption, symmetric-encryption, revealing-signing
+
+  /* Protocol model and security properties here */
+
+end
+\end{lstlisting}
+
+\subsection{Public Key Infrastructure definition}
+\label{subsec:tamarin-example-protocol-model}
+
+We start by defining a Public Key Infrastructure (PKI) that creates keypairs. We do it with the following rule:
+
+\begin{lstlisting}
+rule CreateKeyPair:
+  let pkey = pk(~skey) in
+    [ Fr(~skey) ]
+  -->
+    [
+      !PublicKey($X, pkey),
+      !PrivateKey($X, ~skey),
+      Out(pkey)
+    ]
+\end{lstlisting}
+
+There are many details to discuss:
+\begin{itemize}
+  \item The meaning of the three square brackets is the same seen in \cref{subsec:tamarin-foundations-terminology};
+  \item The arrowed square bracket in the middle \lstinline{--[]->} can also be written as \lstinline{-->} if the multiset of action facts is empty;
+  \item On line 2, we use the let-in construct. It allows us to create key-expression pairs and reuse them in the rule. Many pairs can be used, separated by newlines;
+  \item We recall that \lstinline{Fr(~skey)} models the creation of the fresh term \lstinline{~skey}. In Tamarin, a tilde precedes fresh terms;
+  \item Both \lstinline{!PublicKey} and \lstinline{!PrivateKey} facts are preceded by an exclamation mark, indicating they are persistent;
+  \item Finally, terms preceded by a dollar sign belong to the public names sort.
+\end{itemize}
+
+We also give the attacker the ability to create keypairs with known private keys for a dishonest user:
+
+\begin{lstlisting}
+rule CreateAttackerKeyPair:
+  let pkey = pk(~skey) in
+    [ In(X), Fr(~skey) ]
+  --[ Dishonest(X) ]->
+    [
+      !PublicKey(X, pkey),
+      !PrivateKey(X, ~skey),
+      Out(~skey)
+    ]
+\end{lstlisting}
+
+The action fact \lstinline{Dishonest(X)} will be used to define security properties following our threat model.
+
+\subsection{Protocol model}
+Let us define the protocol rules. We will not describe these rules line by line as the inline comments should be sufficiently informative. Instead, we will give a general description of every rule.
+
+\begin{lstlisting}
+rule A_1:
+  let
+    signed_key = revealSign(~k, skA) // Sign the key...
+    c = aenc(signed_key, pkX)        // ...and encrypt the signature
+  in
+    [ 
+      In(R),                  // Get responder identity...
+      !PublicKey(R, pkX),     // ...and use it to get its public key
+      !PrivateKey($A, skA),   // Get initiator private key
+
+      Fr(~k)                  // Generate fresh key
+    ]
+  -->
+    [ 
+      AState_1(pkX, skA, ~k), // Save state
+      Out(c)                  // Send the encrypted message 
+    ]
+
+rule B_2:
+  let
+    c = aenc(signed_key, pk(skB)) // Pattern match the incoming message
+    k = getMessage(signed_key)    // Recover key from signature
+  in
+    [ 
+      !PublicKey($A, pkA),  // Get public key of $A
+      !PrivateKey($B, skB), // Get private key of $B
+      In(c),                // Receive message
+      
+      Fr(~m)                // Create fresh message to send to initiator
+    ]
+  --[ 
+      Eq(revealVerify(signed_key, k, pkA), true), // Verify signature
+      BSentMessage($B, $A, ~m, k)
+    ]->
+    [ Out(senc(~m, k)) ] // Send message ~m encrypted with key k 
+
+rule A_3:
+    [ 
+      AState_1(pkX, skA, k), // Get state from the first client rule
+      In(senc(m, k))            // Receive the message
+    ]
+  --[ AReceivedMessage($A, m, k) ]-> 
+    []
+\end{lstlisting}
+
+The first rule (\lstinline{A_1}) models client A starting the protocol by sending the signed and encrypted key to the other party. As already seen in the Proverif model, we let the attacker choose the responder.
+
+The second one (\lstinline{B_2}) models the second part of the protocol: B gets its private key as well as A's public key, decrypts the incoming message, checks the signature, and sends the fresh encrypted message to A using the received key.
+
+Finally, the last rule models A receiving the encrypted message.
+
+Notice that the \nth{2} and \nth{3} rules have been labeled with two action facts. We will use these to model security properties.
+
+\subsection{Security properties}
+Finally, we define security properties (or \textit{lemmas}). As already stated, lemmas use a fragment of first-order logic. Let us define a lemma to test the secrecy of the key. For every lemma, we will include comments that explain what the lemma models.
+
+\begin{lstlisting}
+lemma Secrecy:
+  "
+    /* Whenever A and B exchange a message */
+    ∀ A1 A2 B m k #i #j.
+      AReceivedMessage(A1, m, k) @i ∧
+      BSentMessage(B, A2, m, k) @j ∧
+
+      /* and the initiator is honest */
+      ¬(∃ #r. Dishonest(A1) @r) ∧
+
+      /* and the responder answers only to the honest client A */
+      ¬(∃ #r. Dishonest(A2) @r) ∧
+
+      /* and is honest himself */
+      ¬(∃ #r. Dishonest(B) @r)
+      ==> 
+      /* then the attacker does not know the message */
+      ¬(∃ #r. K(m) @r)
+  "
+\end{lstlisting}
+
+The first-order logic formula used should be easily readable with the support of comments. We introduce the last type of term: temporal values (\lstinline{#i #j}), which are used as timepoints in lemmas. The syntax \lstinline{Fact(term)  @i} assigns the instant the fact \lstinline{Fact(term)} was created to the timepoint \lstinline{#i}.
+
+Tamarin additionally allows creating lemmas that attempt to find a trace containing given facts. This feature can be useful to debug and test the protocol.
+\begin{lstlisting}
+lemma ProtocolCanBeExecuted:
+  exists-trace
+  " 
+    ∃ S k #i.
+      AcceptKey(S, k) @i ∧
+      ¬(∃ #r. CompromisedPrivateKey(S) @r)
+  "
+\end{lstlisting}
+
+\subsection{Restrictions}
+
+Tamarin supports restrictions on the trace. Informally, restrictions specify constraints that a protocol execution should uphold. In the rule \lstinline{B_2} we have used the action fact \lstinline{Eq}, which never appears in lemmas. As it is, the \lstinline{Eq} does nothing more than an ordinary action fact. We then add the restriction, which uses the same guarded fragment of first-order logic employed by lemmas:
+
+\begin{lstlisting}
+restriction RestrictionEqual:
+  "∀ X Y #i. Eq(X, Y) @i ==> X = Y"
+\end{lstlisting}
+
+In this example, we used the restriction to verify the correctness of the signature.
+
+\subsection{Partial deconstructions}
+
+When modeling, partial deconstructions are a recurrent problem. In the precomputation phase, Tamarin goes through all rules and inspects their premises. For each of these facts, Tamarin will precompute a set of possible sources, that is, the combinations of rules from which a fact can be obtained. However, sometimes Tamarin cannot resolve where a fact has come from \cite{TamarinProverManual}.
+
+The existence of such partial deconstructions complicates automated proof generation and often means that no proof will be found automatically (in reasonable time). To fix this issue, Tamarin allows defining \textit{source lemmas}. Sources lemmas are a special type of lemmas and are applied during Tamarin's precomputation. Tamarin's manual also contains some tips on how to avoid partial deconstructions in the first place, for example:
+
+\begin{itemize}
+  \item If the deconstruction happens on a term \lstinline{t} that could be public, add a \lstinline{In(t)} fact in the premises;
+  \item Assign strict types: if a term should always be atomic (fresh or public) but pre-computation try to derive non-atomic terms, then give them the corresponding type;
+  \item Use pattern matching instead of destructor functions;
+  \item Start with a simple, working model, then refine it.
+\end{itemize}
+
+For an in-depth analysis of source lemmas (also called type assertions), please refer to \cite{Meier2013AdvancingAS}.

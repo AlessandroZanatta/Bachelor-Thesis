@@ -1,0 +1,103 @@
+theory ExampleProtocol
+
+begin
+  builtins: asymmetric-encryption, symmetric-encryption, revealing-signing
+
+/* Create a keypair for an honest user */
+rule CreateKeyPair:
+  let pkey = pk(~skey) in
+    [ Fr(~skey) ]
+  -->
+    [
+      !PublicKey($X, pkey),
+      !PrivateKey($X, ~skey),
+      Out(pkey)
+    ]
+
+/* Create a keypair for an attacker controlled user */
+rule CreateAttackerKeyPair:
+  let pkey = pk(~skey) in
+    [ In(X), Fr(~skey) ]
+  --[ Dishonest(X) ]->
+    [
+      !PublicKey(X, pkey),
+      !PrivateKey(X, ~skey),
+      Out(~skey)
+    ]
+
+rule A_1:
+  let
+    signed_key = revealSign(~k, skA) // Sign the key...
+    c = aenc(signed_key, pkX)        // ...and encrypt the signature
+  in
+    [ 
+      In(R),                  // Get responder identity...
+      !PublicKey(R, pkX),     // ...and use it to get its public key
+      !PrivateKey($A, skA),   // Get initiator private key
+
+      Fr(~k)                  // Generate fresh key
+    ]
+  -->
+    [ 
+      AState_1(pkX, skA, ~k), // Save state
+      Out(c)                  // Send the encrypted message 
+    ]
+
+rule B_2:
+  let
+    c = aenc(signed_key, pk(skB)) // Pattern match the incoming message
+    k = getMessage(signed_key)    // Recover key from signature
+  in
+    [ 
+      !PublicKey($A, pkA),  // Get public key of $A
+      !PrivateKey($B, skB), // Get private key of $B
+      In(c),                // Receive message
+      
+      Fr(~m)                // Create fresh message to send to initiator
+    ]
+  --[ 
+      Eq(revealVerify(signed_key, k, pkA), true), // Verify signature
+      BSentMessage($B, $A, ~m, k)
+    ]->
+    [ Out(senc(~m, k)) ] // Send message ~m encrypted with key k 
+
+rule A_3:
+    [ 
+      AState_1(pkX, skA, k), // Get state from the first client rule
+      In(senc(m, k))            // Receive the message
+    ]
+  --[ AReceivedMessage($A, m, k) ]-> 
+    []
+
+lemma Secrecy:
+  "
+    /* Whenever A and B exchange a message */
+    ∀ A1 A2 B m k #i #j.
+      AReceivedMessage(A1, m, k) @i ∧
+      BSentMessage(B, A2, m, k) @j ∧
+
+      /* and the initiator is honest */
+      ¬(∃ #r. Dishonest(A1) @r) ∧
+
+      /* and the responder answers only to the honest client A */
+      ¬(∃ #r. Dishonest(A2) @r) ∧
+
+      /* and is honest himself */
+      ¬(∃ #r. Dishonest(B) @r)
+      ==> 
+      /* then the attacker does not know the message */
+      ¬(∃ #r. K(m) @r)
+  "
+
+lemma ProtocolCanBeExecuted:
+  exists-trace
+  " 
+    ∃ A m k #i.
+      AReceivedMessage(A, m, k) @i ∧
+      ¬(∃ X #r. Dishonest(X) @r)
+  "
+
+restriction RestrictionEqual:
+  "∀ X Y #i. Eq(X, Y) @i ==> X = Y"
+
+end

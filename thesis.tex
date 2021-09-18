@@ -48,14 +48,7 @@
   breaklines=true,
   captionpos=b,
   aboveskip=10pt,
-  belowskip=10pt,
-  literate=%
-  {∃}{{\keywordstyle{$\exists$}}}1
-  {∀}{{\keywordstyle{$\forall$}}}1
-  {∧}{{\keywordstyle{$\land$}}}1
-  {∨}{{\keywordstyle{$\lor$}}}1
-  {¬}{{\keywordstyle{$\neg$}}}1
-  {==>}{{\keywordstyle{ $\Longrightarrow$}}}2
+  belowskip=10pt
 }
 \graphicspath{ {./images/} } % images path
 
@@ -96,8 +89,6 @@
 \newcommand*{\myexp}{\hat{\mkern6mu}}
 
 % pi-calculus
-\newcommand{\pic}{\textpi-calculus }
-\newcommand{\picnospace}{\textpi-calculus}
 \newcommand{\apicpc}[2]{\ensuremath{P\ |\ Q}}
 \newcommand{\apicin}[4]{\mbox{in}\left(#1, #2: #3\right); #4}
 \newcommand{\apicout}[3]{\mbox{out}\left(#1, #2\right); #3}
@@ -118,9 +109,18 @@
 \newcommand{\key}[1]{\ensuremath{k_{#1}}}
 \newcommand{\newkey}[1]{\ensuremath{k'_{#1}}}
 \newcommand{\group}[1]{\ensuremath{\Z_{#1}}}
+\newcommand{\attack}[1]{\ensuremath{\func{attacker}{#1}}}
 
 % spacing in math multiline mode
 \setlength{\jot}{1pt}
+
+% Commands for spelling consistency 
+\newcommand{\pic}{\textpi-calculus}
+\newcommand{\apic}{applied \textpi-calculus}
+\newcommand{\Apic}{Applied \textpi-calculus}
+
+\newcommand{\Hornc}{Horn clause}
+\newcommand{\Horncs}{Horn clauses}
 
 \newcommand{\pfs}{perfect forward secrecy}
 \newcommand{\Pfs}{Perfect forward secrecy}
@@ -155,47 +155,39 @@
   keywordstyle=[2]\itshape,
   keywordstyle=[3]\color{Green}\bfseries,
   keywordstyle=[4]\color{RedViolet}\bfseries,
-  alsoletter={^,==>,|,&,.},
-  keywords={Out, In, K, KU, Fr, ^, senc, sdec, adec, aenc, ~, All, Ex, not, ., &, |, ==>, diff},
+  alsoletter={^,==>,|,&,.,-},
+  keywords={Out, In, K, KU, Fr, ^, senc, sdec, adec, aenc, ~, All, Ex, not, ., &, |, ==>, diff, pk, h},
   keywords=[2]{},
   keywords=[3]{},
-  keywords=[4]{rule, lemma, restriction, let, in},
+  keywords=[4]{sources, exists-trace, rule, lemma, restriction, let, in, theory, builtins, begin, end, hashing},
   sensitive=true,
-  morecomment=[l]{//},
+  morecomment=[l][\color{OliveGreen}\itshape]{//},
   morecomment=[n][\color{OliveGreen}\itshape]{/*}{*/},
   morestring=[b]',
   stringstyle=\color{BrickRed},
-}
-
-\lstdefinelanguage{verifpal}
-{
-  keywordstyle=\color{MidnightBlue}\bfseries,
-  keywordstyle=[2]\itshape,
-  keywordstyle=[3]\color{Green}\bfseries,
-  keywordstyle=[4]\color{Orange}\bfseries,
-  alsoletter={->, ?},
-  keywords={principal, attacker, queries, ->, ?},
-  keywords=[2]{Client, Server, Alice, Bob},
-  keywords=[3]{leaks, phase},
-  keywords=[4]{active, passive},
-  sensitive=true,
-  morecomment=[l]{//},
-  morestring=[b]",
+  literate=%
+  {∃}{{\keywordstyle{$\exists$}}}1
+  {∀}{{\keywordstyle{$\forall$}}}1
+  {∧}{{\keywordstyle{$\land$}}}1
+  {∨}{{\keywordstyle{$\lor$}}}1
+  {¬}{{\keywordstyle{$\neg$}}}1
+  {==>}{{\keywordstyle{ $\Longrightarrow$}}}2
 }
 
 \lstdefinelanguage{proverif}
 {
   keywordstyle=\color{MidnightBlue}\bfseries,
   keywordstyle=[2]\itshape,
-  keywordstyle=[3]\color{Green}\bfseries,
-  keywords={table, query, insert, leaks, phase, get, out, event, in, ., ;, attacker, |, new, if, else, then, !, let},
-  alsoletter={., ;, |, !},
-  keywords=[2]{Client, Server},
-  keywords=[3]{},
+  keywordstyle=[3]\color{Orange}\bfseries,
+  keywordstyle=[4]\color{RedViolet}\bfseries,
+  keywords={|, !, bitstring},
+  keywords=[2]{},
+  keywords=[3]{false, true},
+  keywords=[4]{type, fun, reduc, let, table, query, insert, phase, get, out, event, in, ., ;, attacker, forall, if, else, new, then, typeConverter, process},
   sensitive=true,
-  morecomment=[l]{//},
   morecomment=[n][\color{OliveGreen}\itshape]{(*}{*)},
   morestring=[b]",
+  morekeywords={.}
 }
 
 %% -------------------------------------------------------------------------------- %%
@@ -231,22 +223,25 @@ Un bell'abstract va qua!
 
 %% Capitolo
 \chapter{Introduction}
-\input{./chapters/01_introduction}
+\input{./chapters/introduction}
 
-\chapter{Symbolic and Computational model}
-\input{./chapters/02_symbolic_computational}
+\chapter{Symbolic and computational model}
+\input{./chapters/symbolic_computational}
+
+\chapter{Tools foundations}
+\input{./chapters/tools_foundations}
+
+\chapter{Modeling with Proverif and~Tamarin~prover}
+\input{./chapters/modeling_basics}
 
 \chapter{MTProto2.0 protocol description}
-\input{./chapters/03_mtproto_informal}
+\input{./chapters/mtproto_informal}
 
-\chapter{Tools comparison}
-\input{./chapters/04_tools_comparison}
-
-\chapter{Formalization in Tamarin-Prover}
-\input{./chapters/05_tamarin_formalization}
+\chapter{Formalization in Tamarin prover}
+\input{./chapters/tamarin_formalization}
 
 \chapter{Comparison with Proverif}
-\input{./chapters/06_comparison}
+\input{./chapters/comparison}
 
 %% Fine dei capitoli normali, inizio dei capitoli-appendice (opzionali)
 % \appendix

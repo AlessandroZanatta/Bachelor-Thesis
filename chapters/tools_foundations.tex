@@ -1,14 +1,16 @@
+In this section, we will look at the foundations of the analyzed tools, Proverif and Tamarin prover.
+
 
 \section{Proverif}
 Let us start with a brief overview of Proverif internal reasoning. For more information, please refer to \cite{SymbolicComputationalBlanchet, SymbolicVerificationBlanchet, ProverifManual}.
 
 \subsection{High level view}
-Proverif protocols and security properties are based on an extended version of the \pic (the \textit{applied} \pic). The tool also allows the user to define constructors, destructors and equations\footnote{Destructors are basically used to de-construct some previously constructed term (e.g. decryption of an encrypted ciphertext), while equations represent term equality of some sort (e.g. commutativity of multiplication).}, which form the cryptographic primitives. The protocol is then automatically translated to a set of Horn-clauses. Using this abstract representation of the protocol (based on Horn-clauses), the Proverif verifier uses a resolution algorithm on such clauses that allow for verification of security properties \cite{SymbolicComputationalBlanchet}.
+Proverif protocols and security properties are based on an extended version of the \pic{} (the \textit{applied} \pic{}). The tool also allows the user to define constructors, destructors and equations\footnote{Destructors are basically used to de-construct some previously constructed term (e.g. decryption of an encrypted ciphertext), while equations represent term equality of some sort (e.g. commutativity of multiplication).}, which form the cryptographic primitives. The protocol is then automatically translated to a set of \Horncs{}. Using this abstract representation of the protocol (based on \Horncs{}), the Proverif verifier uses a resolution algorithm on such clauses that allow for verification of security properties \cite{SymbolicComputationalBlanchet}.
 A graphical representation of the whole process is given in \cref{fig:proverif-verification-method}.
 
 It is important to note that Proverif is not complete. This means that it may find false attacks. Moreover, it may not terminate, but it has been proven to be precise and efficient enough in practice by many case studies (the following is a non-exhaustive list of examples \cite{10.1145/1266977.1266978, ABADI20053, hal-01575923, MTProto2-Proverif}).
 
-We will now proceed with an overview of \pic and Horn-clauses.
+We will now proceed with an overview of \pic{} and \Horncs{}.
 
 \begin{figure}[t]
   \includegraphics{proverif-verification-method}
@@ -17,13 +19,14 @@ We will now proceed with an overview of \pic and Horn-clauses.
   \label{fig:proverif-verification-method}
 \end{figure}
 
-\subsection{\pic and applied \pic}
+\subsection{\pic{} and \apic{}}
+\label{subsec:pic-apic}
 
-The \pic \cite{pi-calculus-book} is a (minimal) programming language that models a system communicating on channels. It belongs to the \textit{process calculi} family, which is generally used to model concurrent systems. As Proverif uses the \textit{applied} \pic (which is an extension of standard \picnospace), we will briefly present its syntax in the rest of this section.
+The \pic{} \cite{pi-calculus-book} is a (minimal) programming language that models a system communicating on channels. It belongs to the \textit{process calculi} family, which is generally used to model concurrent systems. As Proverif uses the \textit{applied} \pic{} (which is an extension of standard \pic{}{}), we will briefly present its syntax in the rest of this section.
 
-The following description of applied \pic references articles \cite{applied-pi-calculus-private-auth, applied-pi-calculus-abadi-1, applied-pi-calculus-abadi-2}. Please refer to these resources for further information and a more formal or in-depth description. For brevity, we only define the main features of applied \pic in \cref{subsub:syntax-apic}.
+The following description of \apic{} references articles \cite{applied-pi-calculus-private-auth, applied-pi-calculus-abadi-1, applied-pi-calculus-abadi-2}. Please refer to these resources for further information and a more formal or in-depth description. For brevity, we only define the main features of \apic{} in \cref{subsub:syntax-apic}.
 
-\subsubsection{Overview of the syntax of the applied \pic}
+\subsubsection{Overview of the syntax of the \apic{}}
 \label{subsub:syntax-apic}
 
 A \textit{signature \textSigma} is composed by a finite number of functions symbols, each with its own integer arity. Given such signature, together with an infinite set of names and an infinite set of variables, the set of \textbf{terms} is defined by the grammar:
@@ -31,10 +34,10 @@ A \textit{signature \textSigma} is composed by a finite number of functions symb
 \begin{equation}
   \label{eq:apic-terms}
   \begin{aligned}
-    U, V & ::=                           \\
-         & a, b, \dots                   \\
-         & x, y, \dots                   \\
-         & f\left(U_1, \dots, U_l\right)
+    U, V & ::=                        \\
+         & a, b, \ldots               \\
+         & x, y, \ldots               \\
+         & \func{f}{U_1, \ldots, U_l}
   \end{aligned}
   \qquad
   \begin{aligned}
@@ -45,7 +48,7 @@ A \textit{signature \textSigma} is composed by a finite number of functions symb
   \end{aligned}
 \end{equation}
 
-where $f \in \Sigma$ and $l$ matches the arity of $f$. Next, we define a grammar for processes, which is shown in \cref{eq:apic-processes}. As pointed to by Microsoft researchers, this grammar is very similar to the \pic \cite{applied-pi-calculus-private-auth}. We will omit to define differences from standard \pic as we have not formally defined \pic either.
+where $f \in \Sigma$ and $l$ matches the arity of $f$. Next, we define a grammar for processes, which is shown in \cref{eq:apic-processes}. As pointed to by Microsoft researchers, this grammar is very similar to the \pic{} \cite{applied-pi-calculus-private-auth}. We will omit to define differences from standard \pic{} as we have not formally defined \pic{} either.
 
 \begin{equation}
   \label{eq:apic-processes}
@@ -83,15 +86,89 @@ $\apicif{M}{P}{Q}$ is a standard conditional.
 $\apiclet{x}{T}{D}{P}{Q}$ is used to apply destructors or assign some term $D$ to a variable $x$ (of sort $T$);
 }
 
-\subsection{Horn-clauses}
+\subsection{\Horncs{}}
+
+As we said earlier, Proverif's analysis is based on \Horncs{}. Let us define them.
+
+The class of Horn formulas is obtained by restricting the form of the conjuncts in a proposition in conjunctive normal form. Consider a proposition $A$ in conjunctive normal form $C_1 \land \ldots \land C_n$, where each $C_i$ is a conjunction of either positive or negative literals. A is a \Hornc{} if and only if each $C_i$ contains at most one positive literal \cite{DOWLING1984267,horn_1951}. Additionally, every variable in a clause is implicitly universally quantified.
+
+
+\subsection{Intuition for the translation to \Horncs{}}
+For this section we will consider \Horncs{} in the following form: $F_1 \land \ldots \land F_n \Rightarrow F$.
+Additionally, the literal $\attack{x}$ will be used to denote that the attacker knows the term $x$.
+
+Proverif automatically translates cryptographic primitives, attacker capabilities, and the protocol itself to \Horncs{}. In the following paragraphs, we will show some translations that Proverif applies. Most of the examples are taken from Blanchet \cite{blanchet:hal-01110425}.
+
+\paragraph{Representation of cryptographic primitives}
+As already seen, Proverif represents cryptographic primitives as constructors and destructors. The constructors are the functions that explicitly appear in the terms that represent messages. A destructors $g$ is defined as a set $\func{def}{g}$ of rewrite rules of the form $g\left(M_1, \ldots, M_n\right) \rightarrow M$, where $M_1, \ldots, M_n, M$ are terms that contain variables and constructors and the variables in $M$ all occur in $M_1, \ldots, M_n$.
+
+
+\paragraph{Representation of attacker capabilities}
+During its computation, the attacker can apply constructors and destructors. Let us define a constructor of arity $n$ as $\func{f}{x_1, \ldots, x_n}$. We can model it with the following clause:
+
+\begin{equation}
+  \attack{x_1} \land \ldots \land \attack{x_n} \Rightarrow \attack{\func{f}{x_1,\ldots,x_n}}
+\end{equation}
+
+This is consistent with the symbolic model: the adversary needs to know every term to apply a constructor.
+Now, suppose that $g$ is a destructor. For each rewrite rule $\func{g}{M_1 \land \ldots \land M_n} \rightarrow M$ in $\func{def}{g}$ we have the following clause:
+
+\begin{equation}
+  \attack{M_1} \land \ldots \land \attack{M_n} \Rightarrow \attack{M}
+\end{equation}
+
+Notice that the destructor did not appear in the \Hornc{}, and never will. Instead, we use pattern matching to model them. For example, let us show how we can model public-key encryption:
+
+\begin{equation}
+  \begin{alignedat}{3}
+    & \mbox{aenc} \qquad && \attack{m} \land \attack{pk} \Rightarrow \attack{\func{aenc}{m, pk}}            \\
+    & \mbox{pk} \qquad   && \attack{sk} \Rightarrow \attack{\func{pk}{sk}}                                  \\
+    & \mbox{adec} \qquad && \attack{\func{aenc}{m, \func{pk}{sk}}} \land \attack{sk} \Rightarrow \attack{m}
+  \end{alignedat}
+\end{equation}
+
+The first two equation model the constructors $\func{aenc}{m, pk}$ and $\func{pk}{sk}$. The third models asymmetric decryption, defined as $\func{adec}{\func{aenc}{m, \func{pk}{sk}}, sk}$.
+
+\sloppy We also model a revealing signing scheme, formed by two constructors $\func{sign}{m, sk}$ and $\func{pk}{sk}$ and from the rewrite rules $\func{getmess}{\func{sign}{m, sk}} \rightarrow m$ and $\func{verify}{\func{sign}{m, sk}, \func{pk}{sk}} \rightarrow m$, respectively used for message revealing and for signature verification. \Cref{eq:signing-horn-clauses} shows the representation of this primitives as \Horncs{}.
+
+\begin{equation}
+  \label{eq:signing-horn-clauses}
+  \begin{alignedat}{3}
+    & \mbox{sign} \qquad    && \attack{m} \land \attack{sk} \Rightarrow \attack{\func{sign}{m, sk}}            \\
+    & \mbox{getmess} \qquad && \attack{\func{sign}{m, sk}} \Rightarrow \attack{m}                              \\
+    & \mbox{verify} \qquad  && \attack{\func{sign}{m, sk}} \land \attack{\func{pk}{sk}} \Rightarrow \attack{m}
+  \end{alignedat}
+\end{equation}
+
+\paragraph{Representation of the protocol}
+
+Let us show how the protocol below can be written as \Horncs{}. We additionally leave to the attacker the task of starting the protocol, that is, the attacker will send the public key of the responder to A.
+
+\begin{enumerate}
+  \label{enum:protocol}
+  \item A $\rightarrow$ B: $\func{aenc}{\func{sign}{k, skA}, pkB}$
+  \item B $\rightarrow$ A: $\func{senc}{m, k}$
+\end{enumerate}
+
+The responder of the protocol can either be B or the attacker. In both cases, we can model this with:
+
+\begin{equation}
+  \attack{\func{pk}{x}} \Rightarrow \attack{\func{aenc}{\func{sign}{k, skA}, \func{pk}{x}}}
+\end{equation}
+
+When B receives the message, he decrypts it with his secret key $skB$. Then, B tests the signature evaluating $\func{verify}{x', pkA}$, which succeeds if and only if $x' = \func{sign}{y, skA}$. If so, B sends a secret constant $m$ using the encryption key $k$. We assume that the attacker relays the message coming from A, and intercepts the message sent by B. Hence, the following clause models the second message of the protocol:
+
+\begin{equation}
+  \attack{\func{enc}{\func{sign}{y, skA}, \func{pk}{skB}}} \Rightarrow \attack{\func{senc}{m, y}}
+\end{equation}
 
 
 
 
 
 
-
-\section{Tamarin-prover}
+\section{Tamarin prover}
+\label{sec:tamarin-foundations}
 In this section, we will see an overview of Tamarin's foundations and internal reasoning.
 For a more in-depth description and further information, see the Tamarin foundations paper \cite{TamarinFoundations} or the extended foundations paper \cite{TamarinFoundationsExtended}.
 
@@ -100,13 +177,14 @@ First of all, let us examine a high-level picture of Tamarin.
 
 The security property model of Tamarin is based on labeled multiset rewriting rules to specify protocols and adversary capabilities, a guarded fragment\footnote{Only a few examples of formulas respecting the guarded fragment of first-order logic used by Tamarin will be given in \cref{sub:guarded-formulas}. See \cite{FragmentFirstOrderLogicPaper} for a rigorous definition from a mathematical point of view.} of first-order logic to specify security properties\footnote{Security properties in Tamarin will also be referred to as \textit{lemmas}.} and functions and equational theories to model the algebraic properties of cryptographic protocols \cite{TamarinFoundations}.
 
-Given the rewriting rules, security properties and equational theories, Tamarin uses a novel constraint-solving algorithm to validate or falsify lemmas.
+Tamarin uses a novel constraint-solving algorithm to validate or falsify lemmas.
 
 In other words, Tamarin allows to specify a labeled transition system that induces a set of traces and offers automatic verification of such traces using a guarded fragment of first-order logic to specify ``good" traces. Tamarin then tries to prove the negation of the specified ``good" traces.
 
 Tamarin also offers built-in equational theories \cite{TamarinProverManual}. A brief overview will be given in \cref{sub:built-in-equational-theories}.
 
 \subsection{Terminology}
+\label{subsec:tamarin-foundations-terminology}
 As reported earlier, multiset rewriting rules are used to specify adversary capabilities and protocols. More precisely, a \textit{set} of \textit{labelled} multiset rewriting rules are used.
 
 The ingredients of this multiset rewriting system are the following:
@@ -121,7 +199,7 @@ The ingredients of this multiset rewriting system are the following:
       L \msrewrite{A} R
     \end{equation}
     where $L, A$ and $R$ are multisets of facts, respectively called \textbf{premises}, \textbf{actions} and \textbf{conclusions}.
-  \item[Trace] A trace is a sequence $\left<A_1, \dots, A_n\right>$ of sets of ground facts denoting the sequence of actions that happened during a protocol's execution.
+  \item[Trace] A trace is a sequence $\left<A_1, \ldots, A_n\right>$ of sets of ground facts denoting the sequence of actions that happened during a protocol's execution.
 \end{description}
 
 
@@ -195,7 +273,6 @@ A brief list of Tamarin built-ins is given below. Only the built-in theories con
     \end{equation}
 
     Notice that, as far as modeling groups goes, Tamarin is the only tool that does it with such precision. Of course, having such complex equations is paid in terms of efficiency and resources.
-    % TODO: parla ancora un po' di quanto sia figo Tamarin che ha DH built-in!
   \item[xor and bilinear-pairing] the xor theory models the exclusive-or operation. It defines \textbf{$\oplus$/2} (also written as \textbf{XOR/2}) and \textbf{zero/0}. This theory faithfully models xor properties with the following equations:
     \begin{equation}
       \begin{aligned}
@@ -208,7 +285,7 @@ A brief list of Tamarin built-ins is given below. Only the built-in theories con
 
     Additionally, the bilinear pairing theory extends the \DiHe{} theory, which allows working with elliptic curves.
 
-    This theory will not be used in the analysis. Nonetheless, it is noteworthy as there does not seem to be another tool that models them faithfully.
+    These theories will not be used in the analysis. Nonetheless, they are noteworthy as there does not seem to be another tool that models them faithfully.
 \end{description}
 
 \subsection{Guarded formulas}
@@ -227,9 +304,9 @@ As reported earlier, Tamarin uses a guarded fragment of first-order logic to spe
 where $F$ is a fact, $\psi$ is guarded and $\overline{x}$ and $\overline{z}$ are vectors of terms such that $\overline{x} \subseteq \overline{z} \cup i$.
 The variable $i$ is a timepoint, which annotates that the fact $F$ occurred at time $i$ (timepoints all belong to $\Q$)\footnote{Notice that timepoints are very useful to define post-compromise security properties (i.e. leaking an ephemeral key \textbf{after} honest parties have used it) and \pfs{}.} \cite{TamarinTeachingSlides}.
 
+\comment{
 \section{Comparison of Proverif and Tamarin}
 \label{section:proverif-vs-tamarin}
 
-\comment{
 Proverif is NOT complete (see SymbolicComputationalBlanchet page 10), while Tamarin actually is (probably see foundations paper).
 }

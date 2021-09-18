@@ -1,0 +1,70 @@
+
+(* Types *)
+type Key.
+type PublicKey.
+type PrivateKey.
+
+(* Type converters *)
+fun key2bit(Key): bitstring [typeConverter].
+fun bit2key(bitstring): Key [typeConverter].
+
+(* Cryptographic primitives *)
+fun pk(PrivateKey): PublicKey.
+fun aenc(bitstring, PublicKey): bitstring.
+reduc forall m: bitstring, sk: PrivateKey;
+    adec(aenc(m, pk(sk)), sk) = m.
+
+
+fun senc(bitstring, Key): bitstring.
+reduc forall m: bitstring, k: Key;
+    sdec(senc(m, k), k) = m.
+
+
+fun sign(bitstring, PrivateKey): bitstring.
+reduc forall m: bitstring, sk: PrivateKey;
+    verify(sign(m, sk), m, pk(sk)) = true.
+reduc forall m: bitstring, sk: PrivateKey;
+    getmess(sign(m, sk)) = m.
+
+(* Events definition *)
+event AReceivedMessage(bitstring, Key).
+event BSentMessage(bitstring, Key).
+
+(* Channel definition *)
+channel io.
+
+(* Process macros definition *)
+let A(skA: PrivateKey) =
+    in(io, pkX: PublicKey);
+
+    new k: Key;
+    let bit_k = key2bit(k) in
+    out(io, aenc(sign(bit_k, skA), pkX));
+    
+    in(io, c: bitstring);
+    let m = sdec(c, k) in
+        event AReceivedMessage(m, k);
+    0.
+
+let B(skB: PrivateKey, pkA: PublicKey) =
+    
+    in(io, c: bitstring);
+    let signature = adec(c, skB) in
+
+    let bit_k = getmess(signature) in
+    if verify(signature, bit_k, pkA) then
+        let k = bit2key(bit_k) in
+        new m: bitstring;
+        out(io, senc(m, k));
+        event BSentMessage(m, k);
+    0.
+
+(* Security properties *)
+query m: bitstring, k: Key;
+    event(AReceivedMessage(m, k)) && event(BSentMessage(m, k)) && attacker(m) ==> false.
+
+(* Main process *)
+process
+    new skA: PrivateKey; let pkA = pk(skA) in out(io, pkA);
+    new skB: PrivateKey; let pkB = pk(skB) in out(io, pkB);
+    ((!A(skA)) | (!B(skB, pkA)))
