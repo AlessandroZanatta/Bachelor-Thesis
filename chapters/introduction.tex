@@ -1,0 +1,7 @@
+\label{section:introduction}
+
+Security protocols are used every day by billions of users and applications to guarantee a certain degree of security and privacy over communications happening on the (insecure) Internet (MTProto2.0 \cite{Telegram-MTProto2.0}, SSH \cite{rfc4251}, and TLSv1.3 \cite{TLSv1.3_specs} protocols are just a few famous examples). Although, there is a catch: designing such protocols has been proven to be extremely error-prone. As an example, consider the Needham-Schroeder public-key protocol \cite{NSPK}, which has been believed to be secure for almost 20 years - before a fatal flaw was found and corrected \cite{NSPK_LoweGavin}.
+
+Given the importance of the correctness of such protocols and the difficulties for designers to ensure it, it has been necessary to \textit{formally} prove the absence of security vulnerabilities. Towards this aim, a set of tools has been developed to assist the designing of a new protocol.
+
+In this thesis, we are going to compare two tools: Tamarin prover and Proverif. In particular, we will compare them for the formal verification of Telegram's protocol: MTProto2.0. The protocol has already been analyzed and formalised in Proverif by \MMNV{} \cite{MTProto2-Proverif-impl}, and it has been discussed in the associated paper \cite{MTProto2-Proverif}. The formalization in Tamarin will be based on this work, with remarkable differences due to the diverse nature of the two tools.

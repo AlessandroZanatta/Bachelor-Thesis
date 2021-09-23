@@ -38,6 +38,7 @@
 \usepackage{multicol}
 \usepackage[T1]{fontenc}
 \usepackage{courier} % Font for listings
+\usepackage{subfig}
 
 \newcommand\keywordstyle[1]{{\scriptsize\color{MidnightBlue}\bfseries\mathversion{bold}#1}}
 
@@ -50,7 +51,7 @@
   aboveskip=10pt,
   belowskip=10pt
 }
-\graphicspath{ {./images/} } % images path
+\graphicspath{ {./images/}, {./plots/} } % images path
 
 \DeclareCaptionType{equ}[][]
 
@@ -145,6 +146,15 @@
 
 \newcommand{\MMNV}{M. Miculan and N. Vitacolonna}
 \newcommand{\SBWAM}{S. Blake-Wilson and A. Menezes}
+\newcommand{\BLANC}{B. Blanchet}
+
+\newcommand{\Mrss}{Maximum resident set size}
+\newcommand{\mrss}{maximum resident set size}
+\newcommand{\MRSS}{Maximum Resident Set Size}
+
+\newcommand{\WCT}{Wall Clock Time}
+\newcommand{\Wct}{Wall clock time}
+\newcommand{\wct}{wall clock time}
 
 %% -------------------------------------------------------------------------------- %%
 %% Languages listings                                                               %%
@@ -240,8 +250,11 @@ Un bell'abstract va qua!
 \chapter{Formalization in Tamarin prover}
 \input{./chapters/tamarin_formalization}
 
-\chapter{Comparison with Proverif}
+\chapter{Comparison}
 \input{./chapters/comparison}
+
+\chapter{Conclusions}
+\input{./chapters/conclusion}
 
 %% Fine dei capitoli normali, inizio dei capitoli-appendice (opzionali)
 % \appendix
