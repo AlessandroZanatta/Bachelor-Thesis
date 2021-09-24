@@ -1,6 +1,7 @@
 \def\thudbabelopt{english}
 \PassOptionsToPackage{usenames}{xcolor}
 \PassOptionsToPackage{dvipsnames}{xcolor}
+\PassOptionsToPackage{table}{xcolor}
 \documentclass[target=bach,aauheader=]{thud}
 
 %% --- Information about the thesis --- %%
@@ -23,7 +24,7 @@
 %% big: Come "sfbig", solo serif.
 %% plain: Apertura delle parti e dei capitoli tradizionali di LaTeX; intestazioni di pagina come "big".
 
-%% --- Other packages --- %%
+%% --- Other packages --- %%ì
 \usepackage{msc} % Protocol graphical representation
 \usepackage{mathtools}
 \usepackage{amssymb}
@@ -39,6 +40,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{courier} % Font for listings
 \usepackage{subfig}
+\usepackage{multirow}
 
 \newcommand\keywordstyle[1]{{\scriptsize\color{MidnightBlue}\bfseries\mathversion{bold}#1}}
 
@@ -216,8 +218,8 @@
 Ringraziamenti vari qua
 
 %% Sommario (opzionale)
-\abstract
-Un bell'abstract va qua!
+% \abstract
+% Un bell'abstract va qua!
 
 %% Indice
 \tableofcontents
