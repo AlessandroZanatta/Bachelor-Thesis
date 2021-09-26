@@ -1,5 +1,5 @@
 
-In this chapter, we will describe the usage of Proverif and Tamarin prover from a user perspective. We do so by showing the modeling process of the protocol shown in \cref{enum:protocol}. Again, we leave the attacker the task of starting the protocol, that is, the attacker will send the public key of the responder to A.
+In this chapter, we will describe the usage of Proverif and Tamarin prover from a user perspective. We do so by showing the modeling process of the protocol shown in \cref{enum:protocol}. Again, we leave the attacker the task of starting the protocol, that is, the attacker will send the public key of the responder to the initiator.
 
 
 \lstset{language=proverif}
@@ -53,9 +53,9 @@ fun key2bit(Key): bitstring [typeConverter].
 fun bit2key(bitstring): Key [typeConverter].
 \end{lstlisting}
 
-Type converters are function declaration with the additional \lstinline{[typeConverter]} annotation.
+Type converters are declared as constructors, with the additional \lstinline{[typeConverter]} annotation.
 
-\subsection{Events and channels}
+\subsection{Channels and events}
 We have seen in \cref{subsec:pic-apic} that the \apic{} is a language that models a system communicating on channels. In Proverif, we can create channels (both public or private).
 
 \begin{lstlisting}
@@ -162,7 +162,7 @@ We start by defining a Public Key Infrastructure (PKI) that creates keypairs. We
 rule CreateKeyPair:
   let pkey = pk(~skey) in
     [ Fr(~skey) ]
-  -->
+  --[]->
     [
       !PublicKey($X, pkey),
       !PrivateKey($X, ~skey),
@@ -174,7 +174,7 @@ There are many details to discuss:
 \begin{itemize}
   \item The meaning of the three square brackets is the same seen in \cref{subsec:tamarin-foundations-terminology};
   \item The arrowed square bracket in the middle \lstinline{--[]->} can also be written as \lstinline{-->} if the multiset of action facts is empty;
-  \item On line 2, we use the let-in construct. It allows us to create key-expression pairs and reuse them in the rule. Many pairs can be used, separated by newlines;
+  \item On line 2, we use the let-in construct. It allows us to create key-expression pairs and reuse them in the rule. Many pairs can be defined, each separated by a newline;
   \item We recall that \lstinline{Fr(~skey)} models the creation of the fresh term \lstinline{~skey}. In Tamarin, a tilde precedes fresh terms;
   \item Both \lstinline{!PublicKey} and \lstinline{!PrivateKey} facts are preceded by an exclamation mark, indicating they are persistent;
   \item Finally, terms preceded by a dollar sign belong to the public names sort.
@@ -239,7 +239,7 @@ rule B_2:
 rule A_3:
     [ 
       AState_1(pkX, skA, k), // Get state from the first client rule
-      In(senc(m, k))            // Receive the message
+      In(senc(m, k))         // Receive the message
     ]
   --[ AReceivedMessage($A, m, k) ]-> 
     []
@@ -254,7 +254,7 @@ Finally, the last rule models A receiving the encrypted message.
 Notice that the \nth{2} and \nth{3} rules have been labeled with two action facts. We will use these to model security properties.
 
 \subsection{Security properties}
-Finally, we define security properties (or \textit{lemmas}). As already stated, lemmas use a fragment of first-order logic. Let us define a lemma to test the secrecy of the key. For every lemma, we will include comments that explain what the lemma models.
+Finally, we define security properties (or \textit{lemmas}). As already stated, lemmas use a guarded fragment of first-order logic \cref{sub:guarded-formulas}. Let us define a lemma to test the secrecy of the key. For every lemma, we will include comments that explain what the lemma models.
 
 \begin{lstlisting}
 lemma Secrecy:
@@ -284,11 +284,7 @@ Tamarin additionally allows creating lemmas that attempt to find a trace contain
 \begin{lstlisting}
 lemma ProtocolCanBeExecuted:
   exists-trace
-  " 
-    ∃ S k #i.
-      AcceptKey(S, k) @i ∧
-      ¬(∃ #r. CompromisedPrivateKey(S) @r)
-  "
+  "∃ S k #i. AcceptKey(S, k) @i"
 \end{lstlisting}
 
 \subsection{Restrictions}

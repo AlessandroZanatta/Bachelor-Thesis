@@ -5,11 +5,10 @@ In this section, we will look at the foundations of the analyzed tools, Proverif
 Let us start with a brief overview of Proverif internal reasoning. For more information, please refer to \cite{SymbolicComputationalBlanchet, SymbolicVerificationBlanchet, ProverifManual}.
 
 \subsection{High level view}
-Proverif protocols and security properties are based on an extended version of the \pic{} (the \textit{applied} \pic{}). The tool also allows the user to define constructors, destructors and equations\footnote{Destructors are basically used to de-construct some previously constructed term (e.g. decryption of an encrypted ciphertext), while equations represent term equality of some sort (e.g. commutativity of multiplication).}, which form the cryptographic primitives. The protocol is then automatically translated to a set of \Horncs{}. Using this abstract representation of the protocol (based on \Horncs{}), the Proverif verifier uses a resolution algorithm on such clauses that allow for verification of security properties \cite{SymbolicComputationalBlanchet}.
-A graphical representation of the whole process is given in \cref{fig:proverif-verification-method}.
+Proverif protocol specification is based on an extended version of the \pic{} (the \textit{applied} \pic{}). The tool also allows the user to define constructors, destructors and equations\footnote{Destructors are basically used to de-construct some previously constructed term (e.g. decryption of an encrypted ciphertext), while equations represent term equality of some sort (e.g. commutativity of multiplication).}, which form the cryptographic primitives. Security properties are modeled using \Horncs{}. The entire protocol is then automatically translated to a set of \Horncs{}. Using this abstract representation of the protocol, the Proverif verifier uses a resolution algorithm on such clauses that allow for verification of security properties \cite{SymbolicComputationalBlanchet}.
+A graphical representation of the process is given in \cref{fig:proverif-verification-method}.
 
-It is important to note that Proverif is not complete. This means that it may find false attacks. Moreover, it may not terminate, but it has been proven to be precise and efficient enough in practice by many case studies (the following is a non-exhaustive list of examples \cite{10.1145/1266977.1266978, ABADI20053, hal-01575923, MTProto2-Proverif}).
-
+It is important to note that Proverif is not complete. We will consider implications in \cref{sec:comparison}. Moreover, it may not terminate, but it has been proven to be precise and efficient enough in practice by many case studies (the following is a non-exhaustive list of examples \cite{10.1145/1266977.1266978, ABADI20053, MTProto2-Proverif, hal-01575923}).
 We will now proceed with an overview of \pic{} and \Horncs{}.
 
 \begin{figure}[t]
@@ -24,7 +23,7 @@ We will now proceed with an overview of \pic{} and \Horncs{}.
 
 The \pic{} \cite{pi-calculus-book} is a (minimal) programming language that models a system communicating on channels. It belongs to the \textit{process calculi} family, which is generally used to model concurrent systems. As Proverif uses the \textit{applied} \pic{} (which is an extension of standard \pic{}{}), we will briefly present its syntax in the rest of this section.
 
-The following description of \apic{} references articles \cite{applied-pi-calculus-private-auth, applied-pi-calculus-abadi-1, applied-pi-calculus-abadi-2}. Please refer to these resources for further information and a more formal or in-depth description. For brevity, we only define the main features of \apic{} in \cref{subsub:syntax-apic}.
+The following description of \apic{} references articles \cite{applied-pi-calculus-abadi-1, applied-pi-calculus-abadi-2, applied-pi-calculus-private-auth}. Please refer to these resources for further information and a more formal or in-depth description. For brevity, we only define the main features of \apic{} in \cref{subsub:syntax-apic}.
 
 \paragraph{Overview of the syntax of the \apic{}}
 \label{subsub:syntax-apic}
@@ -53,38 +52,34 @@ where $f \in \Sigma$ and $l$ matches the arity of $f$. Next, we define a grammar
 \begin{equation}
     \label{eq:apic-processes}
     \begin{aligned}
-        P, Q & ::=                 \\
-             & 0                   \\
-             & \apicout{N}{M}{P}   \\
-             & \apicin{N}{x}{T}{P} \\
-             & \apicpc{P}{Q}       \\
-             & \apicrep{P}         \\
-             & \apicnew{a}{T}{P}   \\
-             & \apicif{M}{P}{Q}
+        P, Q & ::=                \\
+             & 0                  \\
+             & \apicin{c}{x}{P}   \\
+             & \apicout{c}{x}{P}  \\
+             & \apicpc{P}{Q}      \\
+             & \apicrep{P}        \\
+             & \apicnew{vn}{P}    \\
+             & \apicif{M=N}{P}{Q}
     \end{aligned}
     \qquad
     \begin{aligned}
-        \mbox{proc} & \mbox{esses}                                         \\
-                    & \mbox{null process}                                  \\
-                    & \mbox{output to channel N of message M}              \\
-                    & \mbox{input from channel N of message M with sort T} \\
-                    & \mbox{parallel composition}                          \\
-                    & \mbox{replication}                                   \\
-                    & \mbox{fresh value of sort T}                         \\
+        \mbox{proc} & \mbox{esses}                        \\
+                    & \mbox{null process}                 \\
+                    & \mbox{message input}                \\
+                    & \mbox{message output}               \\
+                    & \mbox{parallel composition}         \\
+                    & \mbox{replication}                  \\
+                    & \mbox{name restriction (``fresh'')} \\
                     & \mbox{conditional}
     \end{aligned}
 \end{equation}
 
 The null process $0$ does nothing;
-$\apicout{N}{M}{P}$ ($\apicin{N}{x}{T}{P}$) outputs (gets) the message M (of sort $x$) into (from) channel N and then continues with process $P$; Notice that getting a message from a channel is a blocking operation;
+$\apicin{c}{x}{P}$ ($\apicout{c}{x}{P}$) gets (outputs) the message $x$ from (into) channel $\overline{c}$ ($c$) and then continues with process $P$; Notice that getting a message from a channel is a blocking operation;
 $\apicpc{P}{Q}$ is the parallel composition of $P$ and $Q$;
 The process $\apicrep{P}$ effectively behaves as an infinite number of copies of $P$ running in parallel (\textit{unbounded} replication);
-$\apicnew{a}{T}{P}$ creates a new fresh value of sort $T$, before proceeding with process $P$;
+$\apicnew{vn}{P}$ creates a new fresh value, before proceeding with process $P$;
 $\apicif{M}{P}{Q}$ is a standard conditional.
-
-\comment{
-$\apiclet{x}{T}{D}{P}{Q}$ is used to apply destructors or assign some term $D$ to a variable $x$ (of sort $T$);
-}
 
 \subsection{\Horncs{}}
 
@@ -100,7 +95,7 @@ Additionally, the literal $\attack{x}$ will be used to denote that the attacker 
 Proverif automatically translates cryptographic primitives, attacker capabilities, and the protocol itself to \Horncs{}. In the following paragraphs, we will show some translations that Proverif applies. Most of the examples are taken from \BLANC{} \cite{blanchet:hal-01110425}.
 
 \paragraph{Representation of cryptographic primitives}
-As already seen, Proverif represents cryptographic primitives as constructors and destructors. The constructors are the functions that explicitly appear in the terms that represent messages. A destructors $g$ is defined as a set $\func{def}{g}$ of rewrite rules of the form $g\left(M_1, \ldots, M_n\right) \rightarrow M$, where $M_1, \ldots, M_n, M$ are terms that contain variables and constructors and the variables in $M$ all occur in $M_1, \ldots, M_n$.
+As already seen, Proverif represents cryptographic primitives as constructors and destructors. A destructors $g$ is defined as a set $\func{def}{g}$ of rewrite rules of the form $g\left(M_1, \ldots, M_n\right) \rightarrow M$, where $M_1, \ldots, M_n, M$ are terms that contain variables and constructors and the variables in $M$ all occur in $M_1, \ldots, M_n$.
 
 
 \paragraph{Representation of attacker capabilities}
@@ -142,7 +137,7 @@ The first two equation model the constructors $\func{aenc}{m, pk}$ and $\func{pk
 
 \paragraph{Representation of the protocol}
 
-Let us show how the protocol below can be written as \Horncs{}. We additionally leave to the attacker the task of starting the protocol, that is, the attacker will send the public key of the responder to A.
+Let us show how the protocol below can be written as \Horncs{}. We additionally leave the attacker the task of starting the protocol, that is, the attacker will send the public key of the responder to A.
 
 \begin{enumerate}
     \label{enum:protocol}
@@ -176,27 +171,26 @@ For a more in-depth description and further information, see the Tamarin foundat
 First of all, let us examine a high-level picture of Tamarin.
 
 The security property model of Tamarin is based on labeled multiset rewriting rules to specify protocols and adversary capabilities, a guarded fragment\footnote{Only a few examples of formulas respecting the guarded fragment of first-order logic used by Tamarin will be given in \cref{sub:guarded-formulas}. See \cite{FragmentFirstOrderLogicPaper} for a rigorous definition from a mathematical point of view.} of first-order logic to specify security properties\footnote{Security properties in Tamarin will also be referred to as \textit{lemmas}.} and functions and equational theories to model the algebraic properties of cryptographic protocols \cite{TamarinFoundations}.
+Finally, Tamarin uses a novel constraint-solving algorithm to validate or falsify lemmas.
 
-Tamarin uses a novel constraint-solving algorithm to validate or falsify lemmas.
-
-In other words, Tamarin allows to specify a labeled transition system that induces a set of traces and offers automatic verification of such traces using a guarded fragment of first-order logic to specify ``good" traces. Tamarin then tries to prove the negation of the specified ``good" traces.
+In other words, Tamarin allows to specify a labeled transition system that induces a set of traces and offers automatic verification of such traces using a guarded fragment of first-order logic to specify ``good'' traces. Tamarin then tries to prove the negation of the specified ``good'' traces.
 
 Tamarin also offers built-in equational theories \cite{TamarinProverManual}. A brief overview will be given in \cref{sub:built-in-equational-theories}.
 
 \subsection{Terminology}
 \label{subsec:tamarin-foundations-terminology}
-As reported earlier, multiset rewriting rules are used to specify adversary capabilities and protocols. More precisely, a \textit{set} of \textit{labelled} multiset rewriting rules are used.
+As reported earlier, multiset rewriting rules are used to specify adversary capabilities and protocols. More precisely, a \textit{set} of \textit{labeled} multiset rewriting rules are used.
 
 The ingredients of this multiset rewriting system are the following:
 
 \begin{description}[style=nextline]
     \item[Terms] which can be essentially thought of as messages. Terms can be of three different sorts. The more general sort is the \textit{msg} sort, which has two incomparable sub-sorts \textit{fresh} and \textit{pub} for fresh and public names, respectively;
     \item[Facts] which model information in the protocol. Facts have an arity, can be linear or persistent and are composed by terms. Linear facts model resources that can be consumed once, while persistent facts can be consumed an arbitrary number of times (and are prefixed by an exclamation mark). By convention, facts always start with a capital letter;
-    \item[Special facts] Four facts are reserved and are used to model the freshness of a message $t$ ($\mbox{\textbf{Fr}}\left(t\right)$), a message $t$ coming from the public channel ($\mbox{\textbf{In}}\left(t\right)$), a message $t$ to be output to the public channel ($\mbox{\textbf{Out}}\left(t\right)$) and knowledge of a certain message $t$ from the attacker ($\mbox{\textbf{K}}\left(t\right)$);
+    \item[Special facts] Four facts are reserved and are used to model the freshness of a message $t$ ($\mbox{\textbf{Fr}}\left(t\right)$), a message $t$ coming from the public channel ($\mbox{\textbf{In}}\left(t\right)$), a message $t$ to send to the public channel ($\mbox{\textbf{Out}}\left(t\right)$) and knowledge of a certain message $t$ from the attacker ($\mbox{\textbf{K}}\left(t\right)$);
     \item[State of the system] The state of the system is represented using a \textit{multiset} of facts;
     \item[Transition rules] A multiset of transition rules defines the possible transitions from one state to another one. Transitions are denoted with the following syntax
         \begin{equation}
-            L \msrewrite{A} R
+            \msr{L}{A}{R}
         \end{equation}
         where $L, A$ and $R$ are multisets of facts, respectively called \textbf{premises}, \textbf{actions} and \textbf{conclusions}.
     \item[Trace] A trace is a sequence $\left<A_1, \ldots, A_n\right>$ of sets of ground facts denoting the sequence of actions that happened during a protocol's execution.
@@ -210,7 +204,7 @@ Let us examine an informal description of transitions.
 \begin{itemize}
     \item{Let $S$ be the current state of the system}
     \item{Let $\msrnolabel{L}{R}$ be a transition rule. Note that this is a \textit{multiset rewriting rule} without a \textit{label};}
-    \item{Let $\msrnolabel{l}{r}$ be a ground instance of the rule (i.e. no variables are present in the multisets);}
+    \item{Let $\msrnolabel{l}{r}$ be a ground instance of the rule (i.e. no variables are found in the multisets);}
     \item{If we apply $\msrnolabel{l}{r}$ (assuming $l \msrsubseteq S$) to our state $S$ we reach a new state, defined by the following equation:
                 \begin{equation}
                     S' = S \msrsetminus l \msrcup r
@@ -221,10 +215,10 @@ Let us examine an informal description of transitions.
                 \end{equation}
                 It should be clear from the equation why persistent facts can be consumed any number of times: they are never removed from the state of the system. This can be useful in scenarios in which we want to model persistent knowledge. For example, the establishment of an encryption key $k$ may be expressed by a persistent fact $\fact{Key}{k}$.
           }
-    \item{When we use labelled multiset rewriting rules, such as $\msr{l}{a}{r}$, we also add facts from $a$ to the \textit{trace} of the execution.}
+    \item{When we use labeled multiset rewriting rules, such as $\msr{l}{a}{r}$, we also add facts from $a$ to the \textit{trace} of the execution.}
 \end{itemize}
 
-\Cref{eq:built-in-tamarin-msr-rules} shows multiset rewriting rules that are always defined by Tamarin. It is not hard to see that these equations are used to model the Dolev-Yao attacker: the first rule allows the adversary to send a message $x$ he knows to someone, while the second one allows him to learn a message $x$ sent by someone.
+\Cref{eq:built-in-tamarin-msr-rules} shows multiset rewriting rules that are always defined by Tamarin. It is not hard to see that these equations are used to model the Dolev-Yao attacker: the first rule allows the adversary to send a message $x$ he knows on the channel, while the second one allows him to learn a message $x$ sent by someone. Notice that knowledge is, of course, persistent.
 
 \begin{equation}
     \label{eq:built-in-tamarin-msr-rules}
@@ -272,7 +266,7 @@ A brief list of Tamarin built-ins is given below. Only the built-in theories con
             \end{aligned}
         \end{equation}
 
-        Notice that, as far as modeling groups goes, Tamarin is the only tool that does it with such precision. Of course, having such complex equations is paid in terms of efficiency and resources.
+        Notice that Tamarin is the only tool that models groups with such precision. Of course, having such complex equations might become a burden when considering efficiency and resources consumption.
     \item[xor and bilinear-pairing] the xor theory models the exclusive-or operation. It defines \textbf{$\oplus$/2} (also written as \textbf{XOR/2}) and \textbf{zero/0}. This theory faithfully models xor properties with the following equations:
         \begin{equation}
             \begin{aligned}
@@ -291,22 +285,15 @@ A brief list of Tamarin built-ins is given below. Only the built-in theories con
 \subsection{Guarded formulas}
 \label{sub:guarded-formulas}
 
-As reported earlier, Tamarin uses a guarded fragment of first-order logic to specify security properties and $-$ in general $-$ traces. All formulas must be guarded, which essentially means that all variables quantified \textbf{must} appear in facts. \Cref{eq:guarded-formulas} shows two main formulas that respect the guarded fragment. Most $-$ if not every $-$ security property can be expressed using these formulas:
+As reported earlier, Tamarin uses a guarded fragment of first-order logic to specify security properties and $-$ in general $-$ traces. All formulas must be guarded, which essentially means that all quantified variables \textbf{must} appear in facts. \Cref{eq:guarded-formulas} shows two main formulas that respect the guarded fragment. Most, if not every, security property can be expressed using these formulas:
 
 \begin{equation}
     \label{eq:guarded-formulas}
     \begin{gathered}
-        \forall \overline{x}. F\left(\overline{z}\right) @i \Rightarrow \psi \\
-        \exists \overline{x}. F\left(\overline{z}\right) @i \land \psi
+        \forall\; \overline{x}.\ F\left(\overline{z}\right) @i \Rightarrow \psi \\
+        \exists\; \overline{x}.\ F\left(\overline{z}\right) @i \land \psi
     \end{gathered}
 \end{equation}
 
 where $F$ is a fact, $\psi$ is guarded and $\overline{x}$ and $\overline{z}$ are vectors of terms such that $\overline{x} \subseteq \overline{z} \cup i$.
-The variable $i$ is a timepoint, which annotates that the fact $F$ occurred at time $i$ (timepoints all belong to $\Q$)\footnote{Notice that timepoints are very useful to define post-compromise security properties (i.e. leaking an ephemeral key \textbf{after} honest parties have used it) and \pfs{}.} \cite{TamarinTeachingSlides}.
-
-\comment{
-\section{Comparison of Proverif and Tamarin}
-\label{section:proverif-vs-tamarin}
-
-Proverif is NOT complete (see SymbolicComputationalBlanchet page 10), while Tamarin actually is (probably see foundations paper).
-}
+The variable $i$ is a timepoint, which denotes that the fact $F$ occurred at time $i$ (timepoints all belong to $\Q$)\footnote{Notice that timepoints are very useful to define \pfs{} lemmas and, in general, post-compromise security properties (i.e. leaking an ephemeral key \textbf{after} honest parties have used it).} \cite{TamarinTeachingSlides}.

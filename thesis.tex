@@ -42,6 +42,8 @@
 \usepackage{subfig}
 \usepackage{multirow}
 
+\setlist[description]{style=nextline}
+
 \newcommand\keywordstyle[1]{{\scriptsize\color{MidnightBlue}\bfseries\mathversion{bold}#1}}
 
 \lstset{
@@ -76,10 +78,10 @@
 %% Taken from https://hal.inria.fr/file/index/docid/955869/filename/sapic.tex
 \newcommand{\msrewrite}[1]{\mathrel{-\hspace{-2pt}[#1]\hspace{-4pt}\to}}
 \newcommand{\emptyrule}{\ensuremath{[]}\xspace}
-\newcommand{\msr}[3]{\ensuremath{#1 \msrewrite{#2} #3}}
+\newcommand{\msr}[3]{\ensuremath{[#1] \msrewrite{#2} [#3]}}
 %% -------------- %%
 
-\newcommand{\msrnolabel}[2]{\ensuremath{#1 \rightarrow #2}}
+\newcommand{\msrnolabel}[2]{\ensuremath{[#1] \rightarrow [#2]}}
 \newcommand{\msrsetminus}{\ensuremath{\setminus^\#}}
 \newcommand{\msrcap}{\ensuremath{\cap^\#}}
 \newcommand{\msrcup}{\ensuremath{\cup^\#}}
@@ -93,11 +95,10 @@
 
 % pi-calculus
 \newcommand{\apicpc}[2]{\ensuremath{P\ |\ Q}}
-\newcommand{\apicin}[4]{\mbox{in}\left(#1, #2: #3\right); #4}
-\newcommand{\apicout}[3]{\mbox{out}\left(#1, #2\right); #3}
-\newcommand{\apicrep}[1]{!#1}
-\newcommand{\apicnew}[3]{\ensuremath{\mbox{new}\ #1: #2; #3}}
-\newcommand{\apiclet}[5]{\ensuremath{\mbox{let}\ #1: #2\ = #3\ \mbox{in}\ #4\ \mbox{else}\ #5}}
+\newcommand{\apicin}[3]{\ensuremath{#1\left(#2\right).#3}}
+\newcommand{\apicout}[3]{\ensuremath{\overline{#1}\left<#2\right>.#3}}
+\newcommand{\apicrep}[1]{\ensuremath{!#1}}
+\newcommand{\apicnew}[2]{\ensuremath{#1.#2}}
 \newcommand{\apicif}[3]{\ensuremath{\mbox{if}\ #1\ \mbox{then}\ #2\ \mbox{else}\ #3}}
 \newcommand{\apicevent}[2]{\ensuremath{\mbox{event}\ \mbox{#1}\left(#2\right)}}
 
@@ -195,7 +196,7 @@
   keywords={|, !, bitstring},
   keywords=[2]{},
   keywords=[3]{false, true},
-  keywords=[4]{type, fun, reduc, let, table, query, insert, phase, get, out, event, in, ., ;, attacker, forall, if, else, new, then, typeConverter, process},
+  keywords=[4]{type, channel, fun, reduc, let, table, query, insert, phase, get, out, event, in, ., ;, attacker, forall, if, else, new, then, typeConverter, process},
   sensitive=true,
   morecomment=[n][\color{OliveGreen}\itshape]{(*}{*)},
   morestring=[b]",
@@ -209,9 +210,9 @@
 \maketitle
 
 %% Dedica (opzionale)
-\begin{dedication}
-  Al mio cane,\par per avermi ascoltato mentre ripassavo le lezioni.
-\end{dedication}
+% \begin{dedication}
+%   Al mio cane,\par per avermi ascoltato mentre ripassavo le lezioni.
+% \end{dedication}
 
 %% Ringraziamenti (opzionali)
 \acknowledgements

@@ -101,7 +101,7 @@ A successful protocol run consists of three rounds, which are represented schema
       \item{The server answers with the client nonce $n_c$, the server fresh nonce $n_s$, a challenge $q \cdot r \leq 2^{63}$ (which are two primes used as a measure to prevent denial of service, as the client needs to spend resources on factorizing $q \cdot r$ before the server has to commit (more) resources\footnote{Notice that this might not be true as this might be vulnerable to a lookup table approach (e.g. using \href{http://factordb.com}{factordb.com}).}) and a list of public RSA key fingerprints (calculated as the lower 64-bits of the SHA1 of the server public keys).}
     \end{enumerate}
 
-  \item[Round 2] The client decomposes $q\cdot r$ in $\left<q, r\right>$, retrieves the public key of the server $pk^{\left(i\right)}$. The client then generates a nonce $n_k$ of 256 bits. This nonce $n_k$ is supposed to be secret. The pair $\left<n_s, n_k\right>$ is used, by both server and client, to derive, through a derivation function $\mbox{kdf}$, a symmetric encryption key $k$ and an initialization vector $iv$, which will be used in subsequent exchanges.
+  \item[Round 2] The client decomposes $q\cdot r$ in $\left<q, r\right>$ and retrieves the public key of the server $pk^{\left(i\right)}$. The client then generates a nonce $n_k$ of 256 bits. This nonce $n_k$ is supposed to be secret. The pair $\left<n_s, n_k\right>$ is used, by both server and client, to derive, through a derivation function $\mbox{kdf}$, a symmetric encryption key $k$ and an initialization vector $iv$, which will be used in subsequent exchanges.
     \begin{enumerate}
       \setcounter{enumi}{2}
       \item{The client asymmetrically encrypts both $\left<q\cdot r, q, r, n_c, n_s, n_k\right>$ and its SHA1 hash with $pk^{(i)}$ and sends it along with $\left<n_c, n_s, q, r, fp^{(i)}\right>$ to the server. A rather complex padding schema is used;}
@@ -118,16 +118,11 @@ A successful protocol run consists of three rounds, which are represented schema
   \item[Round 3] In the last round, the client generates his own \DiHe{} ephemeral key and shares it with the server.
     \begin{enumerate}
       \setcounter{enumi}{4}
-      \item{The client generates his ephemeral key $c$ of 2048-bits and computes $g_c:= \modexp{g}{c}{p}$. Then, it symmetrically encrypts both $\left<n_s, n_s, retryID, g_c\right>$ and its SHA1 hash and sends them along with $\left<n_c, n_s\right>$. The $retryID$ starts at zero at the time of the first attempt, otherwise is based on the values from the last failed attempt;}
+      \item{The client generates his ephemeral key $c$ of 2048-bits and computes $g_c:= \modexp{g}{c}{p}$. Then, it symmetrically encrypts both $\left<n_c, n_s, retryID, g_c\right>$ and its SHA1 hash and sends them along with $\left<n_c, n_s\right>$. The $retryID$ starts at zero at the time of the first attempt, otherwise is based on the values from the last failed attempt;}
       \item{The server is now able to compute the authorization key as $\key{CS}:= \modexp{g_c}{s}{p}$. Assuming server checks pass, S sends an acknowledgment for the new key: $\left<n_c, n_s, \hash{\key{CS}}\right>$.}
     \end{enumerate}
 
 \end{description}
-
-
-\subsection{Security goals}
-TODO (?)
-
 
 
 \section{\Cchat{} encryption schema}
@@ -149,8 +144,8 @@ TODO (?)
 
 Telegram uses the schema in \cref{fig:cloud-chat-protocol} to encrypt every message exchanged between the client and the server after an authorization key has been established using the authorization protocol in \cref{sec:auth-prot}.
 
-A message key \textbf{msg\_key} of 128 bits is calculated as the middle 128 bits of the SHA256 of the entire message prepended by 32 bytes of the authorization key. The message itself contains a 64-bit salt, a 64-bit session identifier, the payload\footnote{The payload contains the time of the message, its length, a sequence number. The receiver should check these pieces of information after decryption.} and a variable size padding of 12-1024 bytes.
-The authorization key \textbf{auth\_key}, combined with the message key \textbf{msg\_key}, is used to derive a key and an initialization vector, which are used to encrypt the entire message using AES in IGE mode.
+A message key msg\_key of 128 bits is calculated as the middle 128 bits of the SHA256 of the entire message prepended by 32 bytes of the authorization key. The message itself contains a 64-bit salt, a 64-bit session identifier, the payload\footnote{The payload contains the time of the message, its length, a sequence number. The receiver should check these pieces of information after decryption.} and a variable size padding of 12-1024 bytes.
+The authorization key auth\_key, combined with the message key msg\_key, is used to derive a key and an initialization vector, which are used to encrypt the entire message using AES in IGE mode.
 
 \subsection{IGE mode}
 Infinite Garble Extension (in short, IGE) is a block cipher mode, lesser-known than others like ECB, CBC, OFB, CTR, CFB, GCM, CCM.
@@ -161,7 +156,7 @@ IGE can be defined with the following formula:
 \end{equation}
 
 where $f_K$ stands for the encrypting function (like AES) with key $K$
-and $i$ goes from 1 to $n$ - the number of plaintext blocks. Two initialization vectors, $c_0$ and $m_0$, are also needed. \Cref{fig:IGE} summarizes how the encryption in IGE mode works.
+and $i$ goes from 1 to $n$ (the number of plaintext blocks). Two initialization vectors, $c_0$ and $m_0$, are also needed. \Cref{fig:IGE} summarizes how the encryption in IGE mode works.
 
 
 One of the main properties of IGE mode is that it makes sure that if a ciphertext block is changed, then every subsequent block following it will not decrypt correctly.

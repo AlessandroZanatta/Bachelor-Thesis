@@ -1,3 +1,5 @@
+\label{sec:comparison}
+
 In this chapter, we will compare Tamarin prover and Proverif under several points of view.
 In particular, the comparison is going to cover the following topics:
 \begin{itemize}
@@ -19,7 +21,7 @@ The security properties of both languages should be straightforward to model as 
 Assuming no previous knowledge, we can conclude that Tamarin's formalism and language might be slightly more complex than Proverif's.
 
 \section{Expressiveness}
-The various built-in theories offered by Tamarin are also very expressive. As we have seen in \cref{sub:built-in-equational-theories}, the Diffie-Hellman, the xor, and the bilinear-pairing equational theories are modeled faithfully. Moreover, Tamarin is one of the few tools able to model exclusive or \cite{xor_tamarin}.
+The various built-in theories offered by Tamarin are also very expressive. As we have seen in \cref{sub:built-in-equational-theories}, the \DiHe{}, the xor, and the bilinear-pairing equational theories are modeled faithfully. Moreover, Tamarin is one of the few tools able to model exclusive or \cite{xor_tamarin}.
 
 \lstset{language=proverif}
 The labeled multiset rewriting rules used by Tamarin is a more low-level formalism than then applied \pic{}. Nonetheless, rewriting rules allow encoding stateful protocols, which are not supported by the \Horncs{} used by Proverif. Moreover, as reported by S. Kremer and K. Robert \cite{kremer:hal-00955869}, many other efficient tools, such as AVISPA \cite{10.1007/11513988_27} or Maude-NPA \cite{Escobar2009}, fail to analyze protocols that require a non-monotonic global state (that is, some type of memory that can be read and altered). Proverif only supports the \lstinline{table} construct to save some information, but this construct does not support removal.
