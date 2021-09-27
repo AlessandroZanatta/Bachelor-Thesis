@@ -298,9 +298,11 @@ lemma LemmaAuthProtKeySecrecy:
 \paragraph{Observational equivalence}
 Attempts to prove observational equivalence for client's secret nonce $n_k$ and authorization key, unfortunately, do not terminate. Notice that observational equivalence is often extremely resource-consuming.
 
-Observational equivalence in Tamarin is expressed using the \lstinline{diff/2} operator, which duplicates every rule, one for the left-hand side and one for the right-hand side of the operator and tries to find a difference between the two traces.
+Observational equivalence in Tamarin is expressed using the \lstinline{diff/2} operator, which duplicates every rule, one for the left-hand side and one for the right-hand side of the operator, and tries to find a difference between the two traces.
 
 In the formalization, we created the two following rules:
+
+\newpage
 
 \begin{lstlisting}
 /*
@@ -365,7 +367,7 @@ Notice on line 3 that we use a public constant \lstinline{'CC_CtoS'} to differen
 \subsection{Security properties verification}
 
 \paragraph{Secrecy and forward secrecy} The \cchat{} encryption schema is essentially employed to obtain secrecy on messages exchanged between a client and a server after they have negotiated an authorization key.
-The following lemma proves secrecy from client to server. A very similar one is used to verify secrecy of messages from server to client.
+The following lemma proves secrecy from client to server. A similar one is used to verify secrecy of messages from server to client.
 
 \begin{lstlisting}
 lemma LemmaCloudChatSecrecyClientToServer:
@@ -387,8 +389,10 @@ lemma LemmaCloudChatSecrecyClientToServer:
         (∃ #r.      CompromisedAuthKey(authKey) @r) ∨
         (∃ skey #r. CompromisedPrivateKey(skey) @r) ∨
         (∃ n #r.    CompromisedNk(n) @r) ∨
-        ((∃ c #r.   CompromisedClientExponent(c) @r) ∧
-        (∃ s #r.    CompromisedServerExponent(s) @r))
+        (
+          (∃ c #r.   CompromisedClientExponent(c) @r) ∧
+          (∃ s #r.    CompromisedServerExponent(s) @r)
+        )
       )
   "
 \end{lstlisting}
@@ -397,12 +401,12 @@ This lemma means that messages are secure, unless:
 \begin{itemize}
   \item The private key of the server is compromised;
   \item The secret nonce $n_k$ of the client is compromised;
-  \item \DiHe{} exponents of client and server are compromised.
+  \item \DiHe{} exponents of both client and server are compromised.
 \end{itemize}
 
 As seen in \cref{sec:auth-prot-formalization}, compromising any of these secrets leads to a lack of secrecy on the key. Additionally, the key itself can be compromised to break \cchats{} secrecy.
 
-As the lemma above is also strict (i.e. removing any event leads to an attack trace), this also means that \pfs{} does not hold in \cchats{} as an attacker that is able to compromise the authorization key can decrypt both past and future messages (as well as forging them, effectively impersonating the client to the server).
+As the lemma above is also strict (i.e. removing any action fact leads to an attack trace), this also means that \pfs{} does not hold in \cchats{} as an attacker that is able to compromise the authorization key can decrypt both past and future messages (as well as forging them, effectively impersonating the client to the server).
 
 
 
@@ -413,7 +417,7 @@ As the lemma above is also strict (i.e. removing any event leads to an attack tr
 \label{sec:secret-chat-formalization}
 A \schat{} can be created after clients have both shared an authorization key with the server. To create a shared secret (the \textit{\schat{} key}) between two clients, MTProto2.0 uses, as already seen in \cref{sec:secret-chat}, a \DiHe{} key exchange in which the Telegram server acts as a forwarder.
 
-As we have already analyzed the security of the authorization protocol and of the \cchat{} encryption in \cref{sec:auth-prot-formalization,sec:cloud-chat-formalization}, in the formalization we do not encrypt messages with the authorization key, nor we do use the server as a forwarder. Instead, we execute the \schat{} protocol exchanges as if they were plaintext: this allows the attacker to act as the server (i.e. having knowledge of both authorization key and forwarding messages) and to manipulate messages \cite{MTProto2-Proverif}. Additionally, removing this layer of encryption allows simplifying the protocol model, formulating stronger security properties and obtaining higher efficiency. For these reasons, we do not model any rule that creates dummy authorization keys nor execute the authorization protocol to obtain them.
+As we have already analyzed the security of the authorization protocol and of the \cchat{} encryption in \cref{sec:auth-prot-formalization,sec:cloud-chat-formalization}, in the formalization we do not encrypt messages with the authorization key, nor we use the server as a forwarder. Instead, we execute the \schat{} protocol exchanges as if they were plaintext: this allows the attacker to act as the server (i.e. having knowledge of both authorization key and forwarding messages) and to manipulate messages \cite{MTProto2-Proverif}. Additionally, removing this layer of encryption allows simplifying the protocol model, formulating stronger security properties, and obtaining better efficiency. For these reasons, we do not model any rule that creates dummy authorization keys nor execute the authorization protocol to obtain them.
 
 \subsection{Exchanges formalization}
 %% Secret-chat protocol %%
@@ -466,7 +470,9 @@ As we have already analyzed the security of the authorization protocol and of th
   \label{fig:secret-chat-protocol-formalization}
 \end{figure}
 
-Following the Proverif formalization, we explicitly name clients and allow the attacker to choose their roles (i.e. who the initiator is, whom the initiator talks to, who the responder is). We apply restriction rules to ensure that the initiator is always honest: % TODO: I've never said what restriction rules were... this maybe needs to be added?
+Following the Proverif formalization, we explicitly name clients and allow the attacker to choose their roles (i.e. who the initiator is, whom the initiator talks to, who the responder is). We apply restriction rules to ensure that the initiator is always honest:
+
+\newpage
 
 \begin{lstlisting}
 restriction RestrictionChoosePrincipal:
@@ -477,6 +483,7 @@ restriction RestrictionChoosePrincipal:
 \end{lstlisting}
 
 However, the responder may as well be a dishonest party. Having named clients explicitly, we can prove additional authentication security properties.
+
 Finally, we model the QR-code comparison with the following rules:
 
 \begin{lstlisting}
@@ -542,7 +549,7 @@ rule SecretChatReceive:
 
 As already noted in \cref{sec:secret-chat}, the encryption schema for \schat{} messages slightly differs from the \cchat{} one. However, from a symbolic point of view, they are equivalent. Hence, we model the \schat{} encryption with the same steps described in \cref{sec:cloud-chat-formalization}.
 
-\Cref{fig:secret-chat-protocol-formalization} shows the \schat{} protocol, with the above simplification.
+\Cref{fig:secret-chat-protocol-formalization} shows the \schat{} protocol, with the simplifications described above.
 
 \subsection{Security properties verification}
 
@@ -570,6 +577,7 @@ lemma LemmaSecretChatSecrecy:
 
 In other words, unless clients skipped the key fingerprint comparison, the exchanged messages are secret. Let us stress the fact that this result does not depend on the secrecy of the authorization key. Hence, if clients compare the fingerprint correctly, end-to-end encryption holds even against a compromised server.
 
+\newpage
 \paragraph{Authentication}
 Many variants of authentication have been proven. The most generic one is the following:
 
@@ -597,7 +605,7 @@ Many variants of authentication have been proven. The most generic one is the fo
   "
 \end{lstlisting}
 
-Notice that we cannot match sessions (i.e. $chatID1 = chatID2$) as the server can forward messages modifying the session identifier. As also pointed to by \MMNV{} \cite{MTProto2-Proverif}, this does not seem to pose any security risks.
+Notice that we cannot match sessions (i.e. $chatID1 = chatID2$) as the server can forward messages modifying the session identifier. As also pointed out by \MMNV{} \cite{MTProto2-Proverif}, this does not seem to pose any security risks.
 
 As reported earlier, skipping QR comparison results in a classic \DiHe{} \mitm{} attack.
 
@@ -612,7 +620,7 @@ Again, Tamarin does not terminate when trying to prove these observational equiv
 
 
 
-
+\newpage
 \section{Rekeying}
 
 %% Rekeying protocol %%
@@ -673,6 +681,8 @@ The formalization of the rekeying protocol is very similar to the formalization 
 The significant difference is that this time the \DiHe{} exchange is end-to-end encrypted using the \schat{} key exchanged (only) between clients. A schematic representation of the protocol's formalization is given in \cref{fig:rekeying-protocol-formalization}.
 
 For efficiency and termination reasons, in our formalization the attacker can choose only the initiator's responder. Both initiator and responder are fixed. \Schat{} keys are generated using the following rules:
+
+\newpage
 
 \begin{lstlisting}
 rule GenerateSecretChatKey:
