@@ -18,6 +18,8 @@ The labeled multiset rewriting rules used by Tamarin is also more "low-level" th
 
 The security properties of both languages should be straightforward to model as these are based on well-known logical constructs. However, the guarded fragment of first-order logic used by Tamarin has a more complex syntax, which can probably intimidate beginners at first.
 
+As hinted in \cref{item:undecidability_approaches}, Tamarin prover also offers the possibility of using interactive proofs. The tool orders the facts to resolve with the chosen heuristics and allows the user to choose which to solve first. This sometimes leads to more efficient proofs in the case of \lstinline{exists-trace} lemmas. Tamarin also offers the possibility of using an oracle (i.e. a script receiving and sending data to standard input and output) to automatize the interactive proof. Please refer to the user manual for further information.
+
 Assuming no previous knowledge, we can conclude that Tamarin's formalism and language might be slightly more complex than Proverif's.
 
 \section{Expressiveness}

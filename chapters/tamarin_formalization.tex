@@ -186,7 +186,8 @@ lemma LemmaAuthProtAgreement:
   "
 \end{lstlisting}
 
-By commenting any line between 10-14 (inclusive), we can model agreement in the presence of some information leakage.
+Lines 10-14 are used to define what attacks the attacker is not allowed to perform in this specific lemma. This technique is ubiquitous in our lemmas formalization. In Proverif, the same lemma is written without these conjunctions as the main process definition defines which attacks the adversary can carry out. By commenting any line between 10-14 (inclusive), we can model agreement in the presence of some information leakage.
+
 Key agreement without leaks holds. It may be interesting to notice that key agreement holds even when both ephemeral keys are revealed as the attacker cannot force the client and the server to compute different keys. Compromising one at a time either server's private key or client nonce allows the attacker to execute a \mitm{} attack on the \DiHe{} exchange.
 
 We can also prove a similar property: if a client and a server end a run of the protocol negotiating the same key in their unrelated sessions, then these sessions actually coincide.
@@ -235,6 +236,8 @@ lemma LemmaAuthProtAuthClientToServer:
 However, we can prove the server knows that the client that negotiated the authorization key is the same that sends the third message. For the sake of brevity, we will not report the related lemma. As anyone can create an authorization key with the server, this lack of authentication is not an issue.
 
 However, server authentication is fundamental, and it is captured by the following lemma:
+
+\newpage
 \begin{lstlisting}[numbers=left]
   lemma LemmaAuthProtAuthServerToClient:
     "
@@ -301,8 +304,6 @@ Attempts to prove observational equivalence for client's secret nonce $n_k$ and 
 Observational equivalence in Tamarin is expressed using the \lstinline{diff/2} operator, which duplicates every rule, one for the left-hand side and one for the right-hand side of the operator, and tries to find a difference between the two traces.
 
 In the formalization, we created the two following rules:
-
-\newpage
 
 \begin{lstlisting}
 /*
@@ -415,11 +416,7 @@ As the lemma above is also strict (i.e. removing any action fact leads to an att
 
 \section{\Schat{}}
 \label{sec:secret-chat-formalization}
-A \schat{} can be created after clients have both shared an authorization key with the server. To create a shared secret (the \textit{\schat{} key}) between two clients, MTProto2.0 uses, as already seen in \cref{sec:secret-chat}, a \DiHe{} key exchange in which the Telegram server acts as a forwarder.
 
-As we have already analyzed the security of the authorization protocol and of the \cchat{} encryption in \cref{sec:auth-prot-formalization,sec:cloud-chat-formalization}, in the formalization we do not encrypt messages with the authorization key, nor we use the server as a forwarder. Instead, we execute the \schat{} protocol exchanges as if they were plaintext: this allows the attacker to act as the server (i.e. having knowledge of both authorization key and forwarding messages) and to manipulate messages \cite{MTProto2-Proverif}. Additionally, removing this layer of encryption allows simplifying the protocol model, formulating stronger security properties, and obtaining better efficiency. For these reasons, we do not model any rule that creates dummy authorization keys nor execute the authorization protocol to obtain them.
-
-\subsection{Exchanges formalization}
 %% Secret-chat protocol %%
 \begin{figure}[!t]
   \setlength{\instdist}{3cm}
@@ -470,9 +467,14 @@ As we have already analyzed the security of the authorization protocol and of th
   \label{fig:secret-chat-protocol-formalization}
 \end{figure}
 
-Following the Proverif formalization, we explicitly name clients and allow the attacker to choose their roles (i.e. who the initiator is, whom the initiator talks to, who the responder is). We apply restriction rules to ensure that the initiator is always honest:
+A \schat{} can be created after clients have both shared an authorization key with the server. To create a shared secret (the \textit{\schat{} key}) between two clients, MTProto2.0 uses, as already seen in \cref{sec:secret-chat}, a \DiHe{} key exchange in which the Telegram server acts as a forwarder.
 
-\newpage
+As we have already analyzed the security of the authorization protocol and of the \cchat{} encryption in \cref{sec:auth-prot-formalization,sec:cloud-chat-formalization}, in the formalization we do not encrypt messages with the authorization key, nor we use the server as a forwarder. Instead, we execute the \schat{} protocol exchanges as if they were plaintext: this allows the attacker to act as the server (i.e. having knowledge of both authorization key and forwarding messages) and to manipulate messages \cite{MTProto2-Proverif}. Additionally, removing this layer of encryption allows simplifying the protocol model, formulating stronger security properties, and obtaining better efficiency. For these reasons, we do not model any rule that creates dummy authorization keys nor execute the authorization protocol to obtain them.
+
+\subsection{Exchanges formalization}
+
+
+Following the Proverif formalization, we explicitly name clients and allow the attacker to choose their roles (i.e. who the initiator is, whom the initiator talks to, who the responder is). We apply restriction rules to ensure that the initiator is always honest:
 
 \begin{lstlisting}
 restriction RestrictionChoosePrincipal:
@@ -516,7 +518,7 @@ restriction RestrictionNotEqual:
 The persistent fact \lstinline{!QR} is created by each party after they have computed the \schat{} key. The above rules model both the correct and incorrect behavior of clients, allowing to specify properties in which a specific behavior is taken. The correct behavior is the one express by the \lstinline{PerformOutOfBandKeyComparison} rule, where the client implicitly checks that the \lstinline{sessionKey} he computed is the same as the other party. The incorrect behavior in rule \lstinline{SkipOutOfBandKeyComparison} models a client that does not match the key fingerprint: as this is the only way of authenticating parties to each other, skipping the comparison may result in a \DiHe{} \mitm{} attack.
 
 Additionally, two rules have been added to allow message sending and receiving:
-
+\newpage
 \begin{lstlisting}
 rule SecretChatSend:
   let
@@ -577,7 +579,6 @@ lemma LemmaSecretChatSecrecy:
 
 In other words, unless clients skipped the key fingerprint comparison, the exchanged messages are secret. Let us stress the fact that this result does not depend on the secrecy of the authorization key. Hence, if clients compare the fingerprint correctly, end-to-end encryption holds even against a compromised server.
 
-\newpage
 \paragraph{Authentication}
 Many variants of authentication have been proven. The most generic one is the following:
 
@@ -723,7 +724,7 @@ rule AttackerGeneratesSecretChatKey:
 
 The first models the generation for honest users, while the second allows the attacker to execute the protocol with honest users by creating a \schat{} with them and sharing the key with the attacker by outputting it. Notice that these rules implicitly assume the correctness of the \schat{} protocol, which we have proven in \cref{sec:secret-chat-formalization}.
 
-A very important modelling decision has been taken, in order to achieve termination of lemmas: both initiator's and responder's first rule have a restriction \lstinline{OnlyTwice(x)}, where \lstinline{x} is \lstinline{'Initiator'} for initiator and \lstinline{'Responder'} for responder. The restriction is defined as follows:
+A crucial modeling decision has been taken to achieve termination of lemmas. To do so, we have devised the following method: both initiator's and responder's first rule have a restriction \lstinline{OnlyTwice(x)}, where \lstinline{x} is \lstinline{'Initiator'} for initiator and \lstinline{'Responder'} for responder. The restriction is defined as follows:
 
 \begin{lstlisting}
 restriction RestrictionOnlyTwice:
